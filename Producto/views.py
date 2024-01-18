@@ -466,21 +466,22 @@ class EliminarComponentex(View):
             componente = Componente.objects.get(id_componente=id_componente)
             componente.costo=None
             componente.sestado = 0
+            ensamble=DetalleEnsambleComponente.objects.filter(id_componentehijo=componente)
+            if(ensamble.exists()):
+                return JsonResponse({'error': 'Este artículo ensambla otros productos, no se puede eliminar'},status=400)
+            ensamble= EnsambleComponente.objects.filter(id_componentepadre=id_componente)
+            ensamble.delete()
             componente.save()
-            return JsonResponse({'mensaje': 'Componente eliminado con éxito'})
+
+            return JsonResponse({'mensaje': 'Artículo eliminado con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
 class ListarComponentes(View):
     def get(self, request, *args, **kwargs):
         try:
-            # Obtener todos los componentes
             componentes = Componente.objects.filter(sestado=1)
-
-            # Convertir los componentes a formato JSON
             lista_componentes = []
-            
-
             for componente in componentes:
                 tipo_producto_data = {
                     'id_categoria': componente.id_categoria.id_categoria,
@@ -522,18 +523,18 @@ class ListarComponentes(View):
                         'detalle':compdata,
                     }
                     lista_componentes.append(componente_data)
-                    return JsonResponse({'componentes': lista_componentes})
-                componente_data = {
-                    'id_componente': componente.id_componente,
-                    'nombre': componente.nombre,
-                    'descripcion': componente.descripcion,
-                    'costo': '$'+str(componente.costo).replace('€', ''),
-                    'tipo': componente.tipo,
-                    'id_um': componente.id_um.idum,
-                    'id_categoria': tipo_producto_data,
-                    'nombre_um': componente.id_um.nombreum,
-                }
-                lista_componentes.append(componente_data)
+                else:
+                    componente_data = {
+                        'id_componente': componente.id_componente,
+                        'nombre': componente.nombre,
+                        'descripcion': componente.descripcion,
+                        'costo': '$'+str(componente.costo).replace('€', ''),
+                        'tipo': componente.tipo,
+                        'id_um': componente.id_um.idum,
+                        'id_categoria': tipo_producto_data,
+                        'nombre_um': componente.id_um.nombreum,
+                    }
+                    lista_componentes.append(componente_data)
             return JsonResponse({'componentes': lista_componentes})
         except Exception as e:
             # Manejar errores aquí
@@ -555,19 +556,23 @@ class EditarComponentex(View):
 
             # Actualizar los datos del componente
             componente.nombre = request.POST.get('nombre')
-            componente.descripcion = request.POST.get('descripcion')
+            
             componente.tipo = request.POST.get('tipo')
+            descripcion = request.POST.get('descripcion')
+            if(descripcion):
+                componente.descripcion=descripcion
             costo_str = request.POST.get('costo')
             if costo_str:
-                return JsonResponse({'mensaje': 'Componente editado con éxito'})
                 componente.costo = None
                 componente.costo = Decimal((costo_str.replace(',', '.')).replace('€',''))
-            # Verificar que la unidad de medida exista
             id_um = request.POST.get('id_um')
             if(id_um):
+                ensambles=DetalleEnsambleComponente.objects.filter(id_componentehijo=componente)
+                if(ensambles):
+                    return JsonResponse({'mensaje': 'Este artículo forma parte de otros ensambles, no se puede cambiar la unidad de medida'})
                 componente.id_um = UnidadMedida.objects.get(idum=id_um)
             estado=request.POST.get('sestado')
-            categoria = request.POST.get('tipo')
+            categoria = request.POST.get('categoria')
             if(categoria):
                 componente.categoria=Categorias.objects.get(id_categoria=categoria)
             if(estado):
