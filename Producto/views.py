@@ -276,8 +276,6 @@ class CrearUnidadMedida(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 @method_decorator(csrf_exempt, name='dispatch')
-
-
 class ListarUnidadesMedida(View):
     def get(self, request, *args, **kwargs):
         try:
@@ -296,8 +294,6 @@ class ListarUnidadesMedida(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 @method_decorator(csrf_exempt, name='dispatch')
-
-
 class CrearProducto(View):
     #@method_decorator(login_required)
     @transaction.atomic
@@ -461,12 +457,25 @@ class CrearComponente(View):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+@method_decorator(csrf_exempt, name='dispatch')
+class EliminarComponentex(View):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        try:
+            id_componente = request.POST.get('id_componente')
+            componente = Componente.objects.get(id_componente=id_componente)
+            componente.costo=None
+            componente.sestado = 0
+            componente.save()
+            return JsonResponse({'mensaje': 'Componente eliminado con éxito'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
 
 class ListarComponentes(View):
     def get(self, request, *args, **kwargs):
         try:
             # Obtener todos los componentes
-            componentes = Componente.objects.all()
+            componentes = Componente.objects.filter(sestado=1)
 
             # Convertir los componentes a formato JSON
             lista_componentes = []
@@ -532,7 +541,7 @@ class ListarComponentes(View):
         
 
 @method_decorator(csrf_exempt, name='dispatch')
-class EditarComponente(View):
+class EditarComponentex(View):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         try:
@@ -542,31 +551,32 @@ class EditarComponente(View):
             # Obtener el componente a editar
             componente = Componente.objects.get(id_componente=id_componente)
 
-            # Obtener datos del cuerpo de la solicitud
-            data = json.loads(request.body)
+            # Obtener datos del cuerpo de la solicitu
 
             # Actualizar los datos del componente
-            componente.nombre = data.get('nombre', componente.nombre)
-            componente.descripcion = data.get('descripcion', componente.descripcion)
-            componente.costo = data.get('costo', componente.costo)
-            componente.tipo = data.get('tipo', componente.tipo)
-
+            componente.nombre = request.POST.get('nombre')
+            componente.descripcion = request.POST.get('descripcion')
+            componente.tipo = request.POST.get('tipo')
+            costo_str = request.POST.get('costo')
+            if costo_str:
+                return JsonResponse({'mensaje': 'Componente editado con éxito'})
+                componente.costo = Decimal((costo_str.replace(',', '.')).replace('€',''))
             # Verificar que la unidad de medida exista
-            id_um = data.get('id_um')
-            unidad_medida = UnidadMedida.objects.get(idum=id_um)
-            componente.id_um = unidad_medida
-
-            # Guardar los cambios
+            id_um = request.POST.get('id_um')
+            if(id_um):
+                componente.id_um = UnidadMedida.objects.get(idum=id_um)
+            estado=request.POST.get('sestado')
+            if(estado):
+                componente.sestado = request.POST.get('sestado')
             componente.save()
-
-            return JsonResponse({'mensaje': 'Componente editado con éxito', 'id_componente': componente.id_componente})
+            
+            return JsonResponse({'mensaje': 'Componente editado con éxito'})
         except Componente.DoesNotExist:
             return JsonResponse({'error': 'Componente no encontrado'}, status=404)
         except UnidadMedida.DoesNotExist:
             return JsonResponse({'error': 'Unidad de medida no encontrada'}, status=404)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-
 
 
 class ListarProductos(View):
