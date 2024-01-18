@@ -477,6 +477,43 @@ class ListarComponentes(View):
                     'id_categoria': componente.id_categoria.id_categoria,
                     'catnombre': componente.id_categoria.catnombre,
                 }
+                ensambleexi = EnsambleComponente.objects.filter(id_componentepadre=componente)
+                if (ensambleexi.exists()):
+                    ensamble=EnsambleComponente.objects.get(id_componentepadre=componente)
+                    detallesensamble=DetalleEnsambleComponente.objects.filter(id_ensamblec=ensamble)
+                    lista_detalle = []
+                    for detalle in detallesensamble:
+                        hijo={
+                            'id':detalle.id_componentehijo.id_componente,
+                            'nombre':detalle.id_componentehijo.nombre
+                        }
+                        um={
+                            'id':detalle.id_umhijo.idum,
+                            'nombre':detalle.id_umhijo.nombreum
+                        }
+                        ensamble_data = {
+                            'id_componentehijo':hijo,
+                            'cantidadhijo': detalle.cantidadhijo,
+                            'um':um
+                        }
+                        lista_detalle.append(ensamble_data)
+                    compdata={
+                        'padrecant':ensamble.padrecantidad,
+                        'detalle':lista_detalle
+                    }
+                    componente_data = {
+                        'id_componente': componente.id_componente,
+                        'nombre': componente.nombre,
+                        'descripcion': componente.descripcion,
+                        'costo': '$'+str(componente.costo).replace('€', ''),
+                        'tipo': componente.tipo,
+                        'id_um': componente.id_um.idum,
+                        'id_categoria': tipo_producto_data,
+                        'nombre_um': componente.id_um.nombreum,
+                        'detalle':compdata,
+                    }
+                    lista_componentes.append(componente_data)
+                    return JsonResponse({'componentes': lista_componentes})
                 componente_data = {
                     'id_componente': componente.id_componente,
                     'nombre': componente.nombre,
@@ -487,10 +524,7 @@ class ListarComponentes(View):
                     'id_categoria': tipo_producto_data,
                     'nombre_um': componente.id_um.nombreum,
                 }
-
                 lista_componentes.append(componente_data)
-
-            # Devolver la lista de componentes en formato JSON
             return JsonResponse({'componentes': lista_componentes})
         except Exception as e:
             # Manejar errores aquí
