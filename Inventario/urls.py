@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import *
+from .views import * 
 
 urlpatterns = [
     path('crearinventario/', CrearInventario.as_view(), name='crearinventario'),
