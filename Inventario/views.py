@@ -21,7 +21,6 @@ class CrearInventario(View):
 
             id_um = request.POST.get('id_um')
             stock_minimo = request.POST.get('stock_minimo')
-            cantidad_disponible = request.POST.get('cantidad_disponible')
 
             id_bodega = request.POST.get('id_bodega')
             bodega_instance = Bodegas.objects.get(id_bodega=id_bodega)
@@ -44,7 +43,7 @@ class CrearInventario(View):
                 id_componente=componente_instance,
                 id_um=um_instance,
                 stock_minimo=stock_minimo,
-                cantidad_disponible=cantidad_disponible
+                cantidad_disponible=0
             )
             inventario.save()
 
@@ -82,6 +81,7 @@ class EditarInventario(View):
             id_inventario = kwargs.get('id_inventario')
             cantidad_aumentar = request.POST.get('cantidad_aumentar') 
             nuevo_stock_minimo = request.POST.get('nuevo_stock_minimo')
+            nuevo_costo_unitario = request.POST.get('nuevo_costo_unitario')
 
             inventario = get_object_or_404(Inventario, id_inventario=id_inventario)
 
@@ -92,6 +92,10 @@ class EditarInventario(View):
             if nuevo_stock_minimo:
                 nuevo_stock_minimo = Decimal(nuevo_stock_minimo)
                 inventario.stock_minimo = nuevo_stock_minimo
+
+            if nuevo_costo_unitario:
+                nuevo_costo_unitario = Decimal(nuevo_costo_unitario)
+                inventario.costo_unitario = nuevo_costo_unitario
 
             inventario.save()
 
