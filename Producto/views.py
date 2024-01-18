@@ -560,12 +560,16 @@ class EditarComponentex(View):
             costo_str = request.POST.get('costo')
             if costo_str:
                 return JsonResponse({'mensaje': 'Componente editado con éxito'})
+                componente.costo = None
                 componente.costo = Decimal((costo_str.replace(',', '.')).replace('€',''))
             # Verificar que la unidad de medida exista
             id_um = request.POST.get('id_um')
             if(id_um):
                 componente.id_um = UnidadMedida.objects.get(idum=id_um)
             estado=request.POST.get('sestado')
+            categoria = request.POST.get('tipo')
+            if(categoria):
+                componente.categoria=Categorias.objects.get(id_categoria=categoria)
             if(estado):
                 componente.sestado = request.POST.get('sestado')
             componente.save()
