@@ -34,8 +34,13 @@ class CrearInventario(View):
             else:
                 raise ValueError('Debe ingresar un componente o un producto.')
 
-            id_um = request.POST.get('id_um')
-            um_instance = UnidadMedida.objects.get(idum=id_um)
+            if componente_instance and id_um:
+                raise ValueError('El componente no requiere una unidad de medida.')
+
+            if id_um:
+                um_instance = UnidadMedida.objects.get(idum=id_um)
+            else:
+                um_instance = None
 
             inventario = Inventario.objects.create(
                 id_bodega=bodega_instance,
@@ -65,7 +70,7 @@ class ListarInventario(View):
                     'id_producto': inventario.id_producto.id_producto if inventario.id_producto else None,
                     'id_componente': inventario.id_componente.id_componente if inventario.id_componente else None,
                     'costo_unitario': str(inventario.costo_unitario),
-                    'id_um': inventario.id_um.idum,
+                    'id_um': inventario.id_um.idum if inventario.id_um else None,
                     'stock_minimo': str(inventario.stock_minimo),
                     'cantidad_disponible': str(inventario.cantidad_disponible),
                 })
