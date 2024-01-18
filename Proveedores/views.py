@@ -11,14 +11,21 @@ class CrearProveedor(View):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         try:
-            nombre_proveedor = request.POST.get('nombre_proveedor')
-            direccion_proveedor = request.POST.get('direccion_proveedor')
-            telefono_proveedor = request.POST.get('telefono_proveedor')
-            correo_proveedor = request.POST.get('correo_proveedor')
-            estado_proveedor = request.POST.get('estado_proveedor')
+            nombre_proveedor = request.POST.get('nombreproveedor')
+            direccion_proveedor = request.POST.get('direccionproveedor')
+            telefono_proveedor = request.POST.get('telefonoproveedor')
+            correo_proveedor = request.POST.get('correoproveedor')
+            estado_proveedor = request.POST.get('sestado')
 
-            if not nombre_proveedor or not estado_proveedor:
+            if not nombre_proveedor or estado_proveedor is None:
                 raise ValueError("Nombre proveedor y estado son obligatorios")
+            
+            if Proveedores.objects.filter(telefonoproveedor=telefono_proveedor).exists():
+                raise ValueError("Ya existe un proveedor con ese número de teléfono")
+
+            if Proveedores.objects.filter(correoproveedor=correo_proveedor).exists():
+                raise ValueError("Ya existe un proveedor con ese correo electrónico")
+
 
             id_administrador = Administrador.objects.first()
 
@@ -38,7 +45,6 @@ class CrearProveedor(View):
             return JsonResponse({'error': str(ve)}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
 @method_decorator(csrf_exempt, name='dispatch')
 class EditarProveedor(View):
     @transaction.atomic
@@ -46,11 +52,11 @@ class EditarProveedor(View):
         try:
             proveedor = Proveedores.objects.get(id_proveedor=proveedor_id)
 
-            nombre_proveedor = request.POST.get('nombre_proveedor')
-            direccion_proveedor = request.POST.get('direccion_proveedor')
-            telefono_proveedor = request.POST.get('telefono_proveedor')
-            correo_proveedor = request.POST.get('correo_proveedor')
-            estado_proveedor = request.POST.get('estado_proveedor')
+            nombre_proveedor = request.POST.get('nombreproveedor', proveedor.nombreproveedor)
+            direccion_proveedor = request.POST.get('direccionproveedor', proveedor.direccionproveedor)
+            telefono_proveedor = request.POST.get('telefonoproveedor', proveedor.telefonoproveedor)
+            correo_proveedor = request.POST.get('correoproveedor', proveedor.correoproveedor)
+            estado_proveedor = request.POST.get('sestado', proveedor.sestado)
 
             proveedor.nombreproveedor = nombre_proveedor
             proveedor.direccionproveedor = direccion_proveedor
@@ -63,5 +69,25 @@ class EditarProveedor(View):
             return JsonResponse({'mensaje': 'Proveedor editado con éxito'})
         except Proveedores.DoesNotExist:
             return JsonResponse({'error': 'Proveedor no encontrado'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+class ListarProveedores(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            proveedores = Proveedores.objects.all()
+            proveedores_list = []
+
+            for proveedor in proveedores:
+                proveedor_info = {
+                    'id_proveedor': proveedor.id_proveedor,
+                    'nombreproveedor': proveedor.nombreproveedor,
+                    'direccionproveedor': proveedor.direccionproveedor,
+                    'telefonoproveedor': proveedor.telefonoproveedor,
+                    'correoproveedor': proveedor.correoproveedor,
+                    'sestado': proveedor.sestado,
+                }
+                proveedores_list.append(proveedor_info)
+
+            return JsonResponse({'proveedores': proveedores_list}, safe=False)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)

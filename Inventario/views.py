@@ -6,6 +6,8 @@ from django.views import View
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404
+from decimal import Decimal
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearInventario(View):
@@ -17,7 +19,6 @@ class CrearInventario(View):
             if id_componente and id_producto:
                 raise ValueError('Debe ingresar solo un componente o un producto, no ambos.')
 
-            costo_unitario = request.POST.get('costo_unitario')
             id_um = request.POST.get('id_um')
             stock_minimo = request.POST.get('stock_minimo')
             cantidad_disponible = request.POST.get('cantidad_disponible')
@@ -41,7 +42,6 @@ class CrearInventario(View):
                 id_bodega=bodega_instance,
                 id_producto=producto_instance,
                 id_componente=componente_instance,
-                costo_unitario=costo_unitario,
                 id_um=um_instance,
                 stock_minimo=stock_minimo,
                 cantidad_disponible=cantidad_disponible
@@ -72,5 +72,29 @@ class ListarInventario(View):
                 })
 
             return JsonResponse({'inventario': inventario_data})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EditarInventario(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            id_inventario = kwargs.get('id_inventario')
+            cantidad_aumentar = request.POST.get('cantidad_aumentar') 
+            nuevo_stock_minimo = request.POST.get('nuevo_stock_minimo')
+
+            inventario = get_object_or_404(Inventario, id_inventario=id_inventario)
+
+            if cantidad_aumentar:
+                cantidad_aumentar = Decimal(cantidad_aumentar)
+                inventario.cantidad_disponible += cantidad_aumentar
+
+            if nuevo_stock_minimo:
+                nuevo_stock_minimo = Decimal(nuevo_stock_minimo)
+                inventario.stock_minimo = nuevo_stock_minimo
+
+            inventario.save()
+
+            return JsonResponse({'mensaje': 'Inventario actualizado con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
