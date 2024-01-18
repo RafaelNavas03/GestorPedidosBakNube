@@ -565,12 +565,15 @@ class EditarComponentex(View):
             if costo_str:
                 componente.costo = None
                 componente.costo = Decimal((costo_str.replace(',', '.')).replace('€',''))
-            id_um = request.POST.get('id_um')
-            if(id_um):
-                ensambles=DetalleEnsambleComponente.objects.filter(id_componentehijo=componente)
-                if(ensambles):
-                    return JsonResponse({'mensaje': 'Este artículo forma parte de otros ensambles, no se puede cambiar la unidad de medida'})
-                componente.id_um = UnidadMedida.objects.get(idum=id_um)
+            if 'id_um' in request.POST:
+                id_um = request.POST.get('id_um')
+        # Si ya tiene una unidad de medida, verificar si el nuevo 'id_um' es diferente
+                if id_um and id_um != str(componente.id_um.idum):
+                    ensambles = DetalleEnsambleComponente.objects.filter(id_componentehijo=componente)
+                    if ensambles.exists():
+                        return JsonResponse({'error': 'Este artículo forma parte de otros ensambles, no se puede cambiar la unidad de medida'}, status=400)
+                if id_um:
+                    componente.id_um = UnidadMedida.objects.get(idum=id_um)
             estado=request.POST.get('sestado')
             categoria = request.POST.get('categoria')
             if(categoria):
