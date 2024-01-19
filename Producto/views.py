@@ -514,7 +514,7 @@ class ListarComponentes(View):
                         'id_componente': componente.id_componente,
                         'nombre': componente.nombre,
                         'descripcion': componente.descripcion,
-                        'costo': '$'+str(componente.costo).replace('€', ''),
+                        'costo': str(componente.costo).replace('€', '').replace('$', ''),
                         'tipo': componente.tipo,
                         'id_um': componente.id_um.idum,
                         'id_categoria': tipo_producto_data,
