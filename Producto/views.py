@@ -410,7 +410,6 @@ class CrearComponente(View):
             tipo = request.POST.get('tipo')
             id_um = request.POST.get('id_um')
             id_categoria = request.POST.get('id_categoria')
-            cantidadpadre = Decimal(request.POST.get('cantidad', 0))
 
             # Verificar que la unidad de medida exista
             unidad_medida = UnidadMedida.objects.get(idum=id_um)
@@ -426,7 +425,7 @@ class CrearComponente(View):
                     id_categoria=categoria,
                     sestado=1
                 )
-
+            cantidadpadre = Decimal(request.POST.get('cantidad', 0))
             if tipo == 'F' and cantidadpadre > 0:
                 detalle_comp = json.loads(request.POST.get('detalle_comp', '[]'))
                 componente = Componente.objects.create(
@@ -548,41 +547,78 @@ class EditarComponentex(View):
         try:
             # Obtener el ID del componente a editar de los argumentos de la URL
             id_componente = kwargs.get('id_componente')
-
-            # Obtener el componente a editar
             componente = Componente.objects.get(id_componente=id_componente)
-
-            # Obtener datos del cuerpo de la solicitu
-
-            # Actualizar los datos del componente
             componente.nombre = request.POST.get('nombre')
-            
-            componente.tipo = request.POST.get('tipo')
+            componente.costo = None
+            tipo = request.POST.get('tipo')
+            componente.tipo=tipo
             descripcion = request.POST.get('descripcion')
+            costo_str = request.POST.get('costo')
             if(descripcion):
                 componente.descripcion=descripcion
-            costo_str = request.POST.get('costo')
             if costo_str:
-                componente.costo = None
-                componente.costo = Decimal((costo_str.replace(',', '.')).replace('€',''))
-            if 'id_um' in request.POST:
-                id_um = request.POST.get('id_um')
-        # Si ya tiene una unidad de medida, verificar si el nuevo 'id_um' es diferente
-                if id_um and id_um != str(componente.id_um.idum):
-                    ensambles = DetalleEnsambleComponente.objects.filter(id_componentehijo=componente)
-                    if ensambles.exists():
-                        return JsonResponse({'error': 'Este artículo forma parte de otros ensambles, no se puede cambiar la unidad de medida'}, status=400)
+                componente.costo = Decimal((costo_str.replace(',', '.')))
+            id_um = request.POST.get('id_um')
+            if id_um and id_um != str(componente.id_um.idum):
+                ensambles = DetalleEnsambleComponente.objects.filter(id_componentehijo=componente)
+                if ensambles.exists():
+                    return JsonResponse({'error': 'Este artículo forma parte de otros ensambles, no se puede cambiar la unidad de medida'}, status=400)
                 if id_um:
                     componente.id_um = UnidadMedida.objects.get(idum=id_um)
-            estado=request.POST.get('sestado')
             categoria = request.POST.get('categoria')
             if(categoria):
                 componente.categoria=Categorias.objects.get(id_categoria=categoria)
-            if(estado):
-                componente.sestado = request.POST.get('sestado')
-            componente.save()
+            if tipo == 'N':
+                componente.tipo=tipo
+                componente.save()
+                return JsonResponse({'mensaje': 'Componente editado con éxito'})
+            cantidadpadre = Decimal(request.POST.get('cantidad', 0))
+            if(tipo=='F' and cantidadpadre > 0):
+                componente.tipo='F'
+                ensamble=EnsambleComponente.objects.filter(id_componentepadre=componente)
+                cantidadpadre = Decimal(request.POST.get('cantidad', 0))
+                detalle_comp = json.loads(request.POST.get('detalle_comp', '[]'))
+                if(ensamble.count()==0):
+                    ensamblecomponente = EnsambleComponente.objects.create(
+                        id_componentepadre=componente,
+                        padrecantidad=cantidadpadre,
+                        id_umpadre=UnidadMedida.objects.get(idum=request.POST.get('id_um'))
+                    )
+                    for detalle_data in detalle_comp:
+                        componente_hijo = Componente.objects.get(id_componente=detalle_data['id'])
+                        um = componente_hijo.id_um
+                        detalleensamblecomponente = DetalleEnsambleComponente.objects.create(
+                            id_ensamblec=ensamblecomponente,
+                            id_componentehijo=componente_hijo,
+                            cantidadhijo=detalle_data['cantidad'],
+                            id_umhijo=um
+                        )
+                    componente.save()
+                    return JsonResponse({'mensaje': 'Componente editado con éxito'})
+                if(ensamble.count()>0):
+                    detalles_actuales = DetalleEnsambleComponente.objects.filter(id_ensamblec=EnsambleComponente.objects.get(id_componentepadre=componente))           
+                    i=0
+                    for det in detalle_comp:
+                        componente_hijo = Componente.objects.get(id_componente=det['id'])
+                        um = componente_hijo.id_um
+                        if i < len(detalles_actuales):
+                            detalle_actual = detalles_actuales[i]
+                            detalle_actual.id_componentehijo = componente_hijo
+                            detalle_actual.cantidadhijo = det['cantidad']
+                            detalle_actual.id_umhijo = um
+                            detalle_actual.save()
+                        else:
+                            ensamble = EnsambleComponente.objects.get(id_componentepadre=componente)
+                            DetalleEnsambleComponente.objects.create(
+                                id_ensamblec=ensamble,
+                                id_componentehijo=componente_hijo,
+                                cantidadhijo=det['cantidad'],
+                                id_umhijo=um
+                            )
+                        i = i + 1
             
-            return JsonResponse({'mensaje': 'Componente editado con éxito'})
+            componente.save()
+            return JsonResponse({'mensaje': 'Se edito correctamente'})
         except Componente.DoesNotExist:
             return JsonResponse({'error': 'Componente no encontrado'}, status=404)
         except UnidadMedida.DoesNotExist:
