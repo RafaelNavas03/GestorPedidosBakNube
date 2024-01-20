@@ -118,3 +118,28 @@ class EditarRecompensaProducto(View):
             return JsonResponse({'mensaje': 'Recompensa de producto editada con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ListarProductosConRecompensas(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            recompensas_productos = RecompensasProductos.objects.all()
+            productos_con_recompensas = [recompensa.id_producto.id_producto for recompensa in recompensas_productos]
+
+            return JsonResponse({'productos_con_recompensas': productos_con_recompensas})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500) 
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ListarCombosConRecompensas(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            recompensas_combos = RecompensasCombos.objects.all()
+            combos_con_recompensas = [recompensa.id_combo.id_combo for recompensa in recompensas_combos]
+
+            return JsonResponse({'combos_con_recompensas': combos_con_recompensas})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+        
+
