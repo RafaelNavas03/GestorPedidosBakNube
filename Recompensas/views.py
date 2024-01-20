@@ -128,7 +128,7 @@ class ListarProductosConRecompensas(View):
 
             return JsonResponse({'productos_con_recompensas': productos_con_recompensas})
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'error': str(e)}, status=500) 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class ListarCombosConRecompensas(View):
@@ -140,5 +140,6 @@ class ListarCombosConRecompensas(View):
             return JsonResponse({'combos_con_recompensas': combos_con_recompensas})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
         
 
