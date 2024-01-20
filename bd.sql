@@ -150,23 +150,6 @@ CREATE TABLE Producto (
 	SEstado CHAR(1) CHECK (SEstado IN ('0', '1')) NOT NULL
 );
 
-CREATE TABLE RecompensasProductos (
-    id_RecompensaProducto SERIAL PRIMARY KEY,
-    id_Producto INTEGER REFERENCES Producto(id_Producto) NOT NULL,
-    Puntos_Recompensa_Producto NUMERIC(3) NOT NULL,
-    SEstado CHAR(1) CHECK (SEstado IN ('0', '1')) NOT NULL,
-    CONSTRAINT chk_puntos CHECK (Puntos_Recompensa_Producto >= 0),
-    CONSTRAINT uk_id_Producto UNIQUE (id_Producto)  -- Restricción de unicidad
-);
-
-CREATE TABLE RecompensasCombos (
-    id_RecompensaCombo SERIAL PRIMARY KEY,
-    id_Combo INTEGER REFERENCES Combo(id_Combo) NOT NULL,
-    Puntos_Recompensa_Combo NUMERIC(3) NOT NULL,
-    SEstado CHAR(1) CHECK (SEstado IN ('0', '1')) NOT NULL,
-    CONSTRAINT chk_puntos CHECK (Puntos_Recompensa_Combo >= 0),
-    CONSTRAINT uk_id_Combo UNIQUE (id_Combo)  -- Restricción de unicidad
-);
 
 CREATE TABLE EnsambleProducto (
     id_emsambleP SERIAL PRIMARY KEY,
@@ -491,4 +474,21 @@ CREATE TABLE horarioproducto (
     id_HorarioS INTEGER REFERENCES HorariosSemanales(id_HorarioS) NOT NULL,
     id_Sucursal INTEGER REFERENCES Sucursales(id_Sucursal) NOT NULL,
     id_Producto INTEGER REFERENCES Producto(id_Producto) NOT NULL
+);
+CREATE TABLE RecompensasProductos (
+    id_RecompensaProducto SERIAL PRIMARY KEY,
+    id_Producto INTEGER REFERENCES Producto(id_Producto) NOT NULL,
+    Puntos_Recompensa_Producto NUMERIC(3) NOT NULL,
+    SEstado CHAR(1) CHECK (SEstado IN ('0', '1')) NOT NULL,
+    CONSTRAINT chk_puntos CHECK (Puntos_Recompensa_Producto >= 0),
+    CONSTRAINT uk_id_Producto UNIQUE (id_Producto)  -- Restricción de unicidad
+);
+
+CREATE TABLE RecompensasCombos (
+    id_RecompensaCombo SERIAL PRIMARY KEY,
+    id_Combo INTEGER REFERENCES Combo(id_Combo) NOT NULL,
+    Puntos_Recompensa_Combo NUMERIC(3) NOT NULL,
+    SEstado CHAR(1) CHECK (SEstado IN ('0', '1')) NOT NULL,
+    CONSTRAINT chk_puntos CHECK (Puntos_Recompensa_Combo >= 0),
+    CONSTRAINT uk_id_Combo UNIQUE (id_Combo)  -- Restricción de unicidad
 );
