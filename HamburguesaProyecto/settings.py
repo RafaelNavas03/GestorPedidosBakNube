@@ -111,11 +111,7 @@ WSGI_APPLICATION = 'HamburguesaProyecto.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-<<<<<<< HEAD
         'NAME': 'PedidosDB',
-=======
-        'NAME': 'Burguer6',
->>>>>>> ec485225e9a111b783a4e5a35dc0c48fe660a708
         'USER': 'postgres',
         'PASSWORD': '123456',
         'HOST': 'localhost',
