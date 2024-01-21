@@ -225,6 +225,7 @@ class VerCombos(View):
                         'iva': detalle.id_producto.iva,
                         'ice': detalle.id_producto.ice,
                         'irbpnr': detalle.id_producto.irbpnr,
+                        'cantidad':detalle.cantidad,
                     }
                     productos_list.append(producto_info)
 
