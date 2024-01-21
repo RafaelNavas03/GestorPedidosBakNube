@@ -527,7 +527,7 @@ class ListarComponentes(View):
                         'id_componente': componente.id_componente,
                         'nombre': componente.nombre,
                         'descripcion': componente.descripcion,
-                        'costo': '$'+str(componente.costo).replace('€', ''),
+                        'costo': str(componente.costo).replace('€', '').replace('$', ''),
                         'tipo': componente.tipo,
                         'id_um': componente.id_um.idum,
                         'id_categoria': tipo_producto_data,
@@ -548,6 +548,11 @@ class EditarComponentex(View):
             # Obtener el ID del componente a editar de los argumentos de la URL
             id_componente = kwargs.get('id_componente')
             componente = Componente.objects.get(id_componente=id_componente)
+            '''
+            detalle_comp = json.loads(request.POST.get('detalle_comp', '[]'))
+            return JsonResponse({'mensaje': detalle_comp})
+            '''
+            #hasta aca
             componente.nombre = request.POST.get('nombre')
             componente.costo = None
             tipo = request.POST.get('tipo')
@@ -616,7 +621,10 @@ class EditarComponentex(View):
                                 id_umhijo=um
                             )
                         i = i + 1
-            
+                    while(i<len(detalles_actuales)):
+                        detalle_actual = detalles_actuales[i]
+                        detalle_actual.delete()
+                        i=i+1
             componente.save()
             return JsonResponse({'mensaje': 'Se edito correctamente'})
         except Componente.DoesNotExist:
