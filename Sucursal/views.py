@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.views import View
 from .models import Sucursales
 import base64
+from datetime import datetime, timezone
 from horariossemanales.models import Horariossemanales
 from GeoSector.models import Geosectores
 from Empresa.models import Empresa
@@ -16,6 +17,7 @@ from Login.models import Cuenta
 from io import BytesIO
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from Empleados.models import *
+from GeoSector.models import *
 
 from PIL import Image
 
@@ -224,6 +226,7 @@ class cargarSucursal(View):
         try:
             id_sucursal = kwargs.get('id_sucursal') 
             sucursal = Sucursales.objects.get(id_sucursal=id_sucursal)
+            
             if sucursal.imagensucursal:
                 img = Image.open(BytesIO(base64.b64decode(sucursal.imagensucursal)))
                 img = img.resize((500, 500))
@@ -232,14 +235,40 @@ class cargarSucursal(View):
                 imagen_base64_resized = base64.b64encode(buffered.getvalue()).decode('utf-8')
             else:
                 imagen_base64_resized = None
+            
+            # Obtener información de ubicación del geosector
+            geosector_info = None
+            if sucursal.id_geosector:
+                detalle_geosector = DetalleGeosector.objects.filter(id_geosector=sucursal.id_geosector)
+                ubicaciones_geosector = [{
+                    'id_ubicacion': detalle.id_ubicacion.id_ubicacion,
+                    'latitud': detalle.id_ubicacion.latitud,
+                    'longitud': detalle.id_ubicacion.longitud,
+                    'udescripcion': detalle.id_ubicacion.udescripcion,
+                } for detalle in detalle_geosector]
+
+                geosector_info = {
+                    'id_geosector': sucursal.id_geosector.id_geosector,
+                    'secnombre': sucursal.id_geosector.secnombre,
+                    'secdescripcion': sucursal.id_geosector.secdescripcion,
+                    'fechacreaciong': sucursal.id_geosector.fechacreaciong.strftime('%Y-%m-%d %H:%M:%S'),
+                    'secestado': sucursal.id_geosector.secestado,
+                    'sectipo': sucursal.id_geosector.sectipo,
+                    'sestado': sucursal.id_geosector.sestado,
+                    'tarifa': sucursal.id_geosector.tarifa,
+                    'ubicaciones_geosector': ubicaciones_geosector,
+                }
+
             ubicacion_info = {
                 'id_ubicacion': sucursal.id_ubicacion.id_ubicacion if sucursal.id_ubicacion else None,
                 'latitud': sucursal.id_ubicacion.latitud if sucursal.id_ubicacion else None,
                 'longitud': sucursal.id_ubicacion.longitud if sucursal.id_ubicacion else None,
                 'udescripcion': sucursal.id_ubicacion.udescripcion if sucursal.id_ubicacion else None,
             }
+            
+            cantidad_empleados = cantidaEmp(sucursal.id_sucursal)
             serialized_sucursales = []
-            sucursal_info = {
+            sucursal_info  = {
                 'id_sucursal': sucursal.id_sucursal,
                 'srazon_social': sucursal.srazon_social,
                 'sruc': sucursal.sruc,
@@ -251,13 +280,14 @@ class cargarSucursal(View):
                 'snombre': sucursal.snombre,
                 'fsapertura': sucursal.fsapertura.strftime('%Y-%m-%d') if sucursal.fsapertura else None,
                 'id_horarios': sucursal.id_horarios.id_horarios if hasattr(sucursal, 'id_horarios') else None,
-                'id_geosector': getattr(sucursal.id_geosector, 'id_geosector', None),
+                'id_geosector': geosector_info,
                 'firmaelectronica': sucursal.firmaelectronica,
                 'id_empresa': sucursal.id_empresa_id,
                 'id_ubicacion': ubicacion_info,
-                'cantidadempleados':cantidaEmp(sucursal.id_sucursal),
+                'cantidadempleados': cantidad_empleados,
                 'imagensucursal': imagen_base64_resized,
             }
+
             serialized_sucursales.append(sucursal_info)
             return JsonResponse({'mensaje': serialized_sucursales})    
         except Exception as e:
@@ -298,5 +328,49 @@ class EditarSucursal(View):
                     return JsonResponse({'error': f"Error al procesar imagen: {str(img_error)}"}, status=400)
             sucursal.save()
             return JsonResponse({'mensaje': 'Sucursal editada con éxito'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+@method_decorator(csrf_exempt, name='dispatch')
+class crearGeosector(View):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        try:
+            # Obtener datos del formulario
+            secnombre = request.POST.get('secnombre')
+            secdescripcion = request.POST.get('secdescripcion')
+            id_sucursal = request.POST.get('id_sucursal')
+            datos_geosector_str = request.POST.get('datosGeosector','[]')
+
+            # Parsear datos_geosector como JSON
+            datos_geosector = json.loads(datos_geosector_str)
+            sucursal = Sucursales.objects.get(id_sucursal=id_sucursal)
+            # Crear geosector con fecha actual
+            geosector = Geosectores.objects.create(
+                secnombre=secnombre,
+                secdescripcion=secdescripcion,
+                fechacreaciong=datetime.now(timezone.utc),
+                secestado=1,
+                sectipo='C',
+                sestado=1,
+            )
+            sucursal.id_geosector = geosector
+            sucursal.save()
+            # Asociar el geosector a la sucursal
+            
+
+            # Crear ubicaciones y detalle_geosector
+            for ubicacion_data in datos_geosector:
+                ubicacion = Ubicaciones.objects.create(
+                    latitud=ubicacion_data['latitude'],
+                    longitud=ubicacion_data['longitude'],
+                    sestado=1,
+                )
+
+                DetalleGeosector.objects.create(
+                    id_geosector=geosector,
+                    id_ubicacion=ubicacion,
+                )
+
+            return JsonResponse({'mensaje': 'Geosector y sucursal creados con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)

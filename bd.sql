@@ -492,3 +492,8 @@ CREATE TABLE RecompensasCombos (
     CONSTRAINT chk_puntos CHECK (Puntos_Recompensa_Combo >= 0),
     CONSTRAINT uk_id_Combo UNIQUE (id_Combo)  -- Restricción de unicidad
 );
+CREATE TABLE detalle_geosector (
+    id_detallegeosector SERIAL PRIMARY KEY,
+    id_geosector INTEGER REFERENCES geosectores(id_geosector),
+    id_ubicacion INTEGER REFERENCES ubicaciones(id_ubicacion)
+);
