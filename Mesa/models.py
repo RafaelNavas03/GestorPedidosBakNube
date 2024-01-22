@@ -11,6 +11,8 @@ class Mesas(models.Model):
     estado = models.CharField(max_length=1, choices=ESTADO_CHOICES, default='D')
     activa = models.CharField(max_length=1, choices=ACTIVA_CHOICES, default='0')
     maxpersonas = models.SmallIntegerField()
+    sestado = models.CharField(max_length=1)
+
     class Meta:
         managed = False
         db_table = 'mesas'

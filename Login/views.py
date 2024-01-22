@@ -27,7 +27,6 @@ class CrearUsuarioView(View):
             contrasenia = data.get('contrasenia')
             ctelefono = data.get('ctelefono')
             razons= data.get('crazon_social')
-            telefono=data.get('ctelefono')
             tipocliente= data.get('tipocliente')
             snombre=data.get('snombre')
             capellido=data.get('capellido')
@@ -43,7 +42,7 @@ class CrearUsuarioView(View):
                 contrasenia= make_password(contrasenia),
                 estadocuenta ='1',
                 rol = 'C',
-                correorecuperacion =correorecuperacion
+                correorecuperacion =correorecuperacion,
             )
 
             # Crear un nuevo cliente asociado al usuario y la cuenta
@@ -56,7 +55,8 @@ class CrearUsuarioView(View):
                 capellido = capellido,
                 ruc_cedula = ruc_cedula,
                 ccorreo_electronico = correorecuperacion,
-                ubicacion = ubicacion
+                ubicacion = ubicacion,
+                sestado = '1'
             )
         
 
