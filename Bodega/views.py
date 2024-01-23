@@ -60,19 +60,18 @@ class ListarBodegasView(View):
 class EditarBodegaView(View):
     def post(self, request, *args, **kwargs):
         try:
-            data = json.loads(request.body)
-            bodega_id = kwargs.get('bodega_id')
+            bodega_id = kwargs.get('bodega_id') or kwargs.get('id')
+            data = request.POST
+
             nombrebog = data.get('nombrebog')
             descripcion = data.get('descripcion')
             id_sucursal = data.get('id_sucursal')
 
-            # Reemplaza 'id' con el nombre correcto del campo de identificación en tu modelo Bodegas
             bodega = Bodegas.objects.get(id_bodega=bodega_id)
 
             bodega.nombrebog = nombrebog
             bodega.descripcion = descripcion
 
-            # Obtener la sucursal correspondiente
             sucursal = Sucursales.objects.get(id_sucursal=id_sucursal)
             bodega.id_sucursal = sucursal
 
