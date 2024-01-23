@@ -14,15 +14,16 @@ import json
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearInventario(View):
-    def post(self, request, *args, **kwargs):
+    def post(self, request, id_bodega, *args, **kwargs):
         try:
             # Obtener datos del pedido desde el request
             id_proveedor = request.POST.get('id_proveedor')
-            id_bodega = request.POST.get('id_bodega')
             fecha_pedido = request.POST.get('fecha_pedido')
             fecha_entrega_esperada = request.POST.get('fecha_entrega_esperada')
             observacion_pedido = request.POST.get('observacion_pedido')
             proveedor_instance = get_object_or_404(Proveedores, id_proveedor=id_proveedor)
+            
+            # Obtener la bodega directamente de los parámetros de la URL
             bodega_instance = get_object_or_404(Bodegas, id_bodega=id_bodega)
 
             # Crear el pedido
@@ -34,18 +35,20 @@ class CrearInventario(View):
                 estado='P',
                 observacion=observacion_pedido
             )
-            detalles_pedido_raw = request.POST.get('detalles_pedido','{}')
+            detalles_pedido_raw = request.POST.get('detalles_pedido', '{}')
             detalles_pedido = json.loads(detalles_pedido_raw)
 
             # Iterar sobre los detalles del pedido
             for detalle_pedido_data in detalles_pedido['detalles_pedido']:
                 # Obtener datos del detalle del pedido desde el request
-                id_producto = detalle_pedido_data['id_producto']#//AQUI DA FALLO
-                id_componente = detalle_pedido_data['id_componente']
+                id_producto = detalle_pedido_data.get('id_producto')
+                id_componente = detalle_pedido_data.get('id_componente')
                 cantidad_pedido = detalle_pedido_data['cantidad_pedido']
                 costo_unitario = detalle_pedido_data['costo_unitario']
-                id_um = detalle_pedido_data['id_um']
-                stock_minimo = detalle_pedido_data['stock_minimo']
+                id_um = detalle_pedido_data.get('id_um')
+
+                if id_producto and id_componente:
+                    raise ValueError('Debe ingresar solo un componente o un producto.')
 
                 if id_producto:
                     producto_instance = get_object_or_404(Producto, id_producto=id_producto)
@@ -80,12 +83,13 @@ class CrearInventario(View):
                     id_producto=producto_instance,
                     id_componente=componente_instance,
                     id_um=um_instance,
-                    defaults={'stock_minimo': stock_minimo, 'cantidad_disponible': cantidad_pedido}
+                    defaults={'cantidad_disponible': cantidad_pedido, 'costo_unitario': costo_unitario}
                 )
 
                 if not created:
-                    # Si ya existe el registro en el inventario, actualiza la cantidad disponible
+                    # Si ya existe el registro en el inventario, actualiza la cantidad disponible y el costo unitario
                     inventario.cantidad_disponible += cantidad_pedido
+                    inventario.costo_unitario = costo_unitario
                     inventario.save()
 
             return JsonResponse({'mensaje': 'Pedido y inventario creados con éxito'})
