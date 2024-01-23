@@ -398,7 +398,6 @@ class EditarProducto(View):
             return JsonResponse({'mensaje': 'Producto editado con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
-        
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearComponente(View):
     @transaction.atomic

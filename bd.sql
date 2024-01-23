@@ -497,3 +497,26 @@ CREATE TABLE detalle_geosector (
     id_geosector INTEGER REFERENCES geosectores(id_geosector),
     id_ubicacion INTEGER REFERENCES ubicaciones(id_ubicacion)
 );
+CREATE TABLE pedidosproveedor
+(
+    id_pedidoproveedor SERIAL PRIMARY KEY,
+    id_proveedor INTEGER REFERENCES public.proveedores(id_proveedor) NOT NULL,
+    id_bodega INTEGER REFERENCES public.bodegas(id_bodega) NOT NULL,
+    fechapedido TIMESTAMP NOT NULL,
+    fechaentregaesperada TIMESTAMP,
+    estado CHAR(1) NOT NULL,
+    observacion VARCHAR(500),
+    CONSTRAINT fk_pedidosproveedor_proveedores FOREIGN KEY (id_proveedor) REFERENCES public.proveedores(id_proveedor),
+    CONSTRAINT fk_pedidosproveedor_bodegas FOREIGN KEY (id_bodega) REFERENCES public.bodegas(id_bodega)
+);
+
+CREATE TABLE detallepedidoproveedor
+(
+    id_detallepedidoproveedor SERIAL PRIMARY KEY,
+    id_pedidoproveedor INTEGER REFERENCES pedidosproveedor(id_pedidoproveedor) NOT NULL,
+    id_producto INTEGER REFERENCES producto(id_producto),
+    id_componente INTEGER REFERENCES componente(id_componente),
+    cantidad NUMERIC(9,2) NOT NULL,
+    costounitario NUMERIC(9,2) NOT NULL,
+    id_um INTEGER REFERENCES unidadmedida(idum) NOT NULL
+);

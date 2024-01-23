@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from Inventario.models import Inventario
 from Producto.models import *
+from Proveedores.models import *
 from Bodega.models import Bodegas
 from django.views import View
 from django.http import JsonResponse
@@ -16,14 +17,11 @@ class CrearInventario(View):
     def post(self, request, *args, **kwargs):
         try:
             # Obtener datos del pedido desde el request
-            data = json.loads(request.body.decode('utf-8'))
-
-            id_proveedor = data.get('id_proveedor')
-            id_bodega = data.get('id_bodega')
-            fecha_pedido = data.get('fecha_pedido')
-            fecha_entrega_esperada = data.get('fecha_entrega_esperada')
-            observacion_pedido = data.get('observacion_pedido')
-
+            id_proveedor = request.POST.get('id_proveedor')
+            id_bodega = request.POST.get('id_bodega')
+            fecha_pedido = request.POST.get('fecha_pedido')
+            fecha_entrega_esperada = request.POST.get('fecha_entrega_esperada')
+            observacion_pedido = request.POST.get('observacion_pedido')
             proveedor_instance = get_object_or_404(Proveedores, id_proveedor=id_proveedor)
             bodega_instance = get_object_or_404(Bodegas, id_bodega=id_bodega)
 
@@ -36,19 +34,18 @@ class CrearInventario(View):
                 estado='P',
                 observacion=observacion_pedido
             )
-            
-            detalles_pedido_raw = data.get('detalles_pedido')
+            detalles_pedido_raw = request.POST.get('detalles_pedido','{}')
             detalles_pedido = json.loads(detalles_pedido_raw)
 
             # Iterar sobre los detalles del pedido
-            for detalle_pedido_data in detalles_pedido:
+            for detalle_pedido_data in detalles_pedido['detalles_pedido']:
                 # Obtener datos del detalle del pedido desde el request
-                id_producto = detalle_pedido_data.get('id_producto')
-                id_componente = detalle_pedido_data.get('id_componente')
-                cantidad_pedido = detalle_pedido_data.get('cantidad_pedido')
-                costo_unitario = detalle_pedido_data.get('costo_unitario')
-                id_um = detalle_pedido_data.get('id_um')
-                stock_minimo = detalle_pedido_data.get('stock_minimo')
+                id_producto = detalle_pedido_data['id_producto']#//AQUI DA FALLO
+                id_componente = detalle_pedido_data['id_componente']
+                cantidad_pedido = detalle_pedido_data['cantidad_pedido']
+                costo_unitario = detalle_pedido_data['costo_unitario']
+                id_um = detalle_pedido_data['id_um']
+                stock_minimo = detalle_pedido_data['stock_minimo']
 
                 if id_producto:
                     producto_instance = get_object_or_404(Producto, id_producto=id_producto)
