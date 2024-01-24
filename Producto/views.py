@@ -721,6 +721,12 @@ class CrearEnsambleUnidadMedida(View):
             idump = request.POST.get('idump')
             idumc = request.POST.get('idumc')
             cantidadconversion = request.POST.get('cantidadconversion')
+            if Decimal(cantidadconversion) != 0:
+                cantidadconversioninv = 1 / Decimal(cantidadconversion)
+                print(cantidadconversioninv)
+            else:
+                print('Dividio por cero xd')
+                return JsonResponse({'error': 'Dividir por cero'}, status=400)
             unidapadre=UnidadMedida.objects.get(idum=idump)
             unidahijo=UnidadMedida.objects.get(idum=idumc)
             ensamble_existente = EnsambleUnidadMedida.objects.filter(idump=unidapadre, idumc=unidahijo).first()
@@ -735,10 +741,63 @@ class CrearEnsambleUnidadMedida(View):
                     idumc=unidad_medida_hijo,
                     cantidadconversion=cantidadconversion
                 )
+            inverso_existente = EnsambleUnidadMedida.objects.filter(idump=unidahijo, idumc=unidapadre).first()
+            if inverso_existente:
+                inverso_existente.cantidadconversion = cantidadconversioninv
+                inverso_existente.save()
+            else:
+                unidad_medida_padre = UnidadMedida.objects.get(idum=idump)
+                unidad_medida_hijo = UnidadMedida.objects.get(idum=idumc)
+                EnsambleUnidadMedida.objects.create(
+                    idump=unidad_medida_hijo,
+                    idumc=unidad_medida_padre,
+                    cantidadconversion=cantidadconversioninv
+                )
+
 
             return JsonResponse({'mensaje': 'Ensamble de unidad de medida creado o actualizado con éxito'})
 
         except UnidadMedida.DoesNotExist as e:
             return JsonResponse({'error': 'Una o ambas unidades de medida no existen'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+class ListaConversiones(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            # Obtener todas las conversiones
+            conversiones = EnsambleUnidadMedida.objects.all()
+
+            # Crear una lista para almacenar los resultados
+            lista_conversiones = []
+
+            # Iterar sobre cada ensamble de unidad de medida
+            for conversion in conversiones:
+                # Obtener los detalles de la unidad de medida padre
+                unidad_padre = UnidadMedida.objects.get(idum=conversion.idump_id)
+                nombre_unidad_padre = unidad_padre.nombreum
+
+                # Obtener los detalles de la unidad de medida hijo
+                unidad_hijo = UnidadMedida.objects.get(idum=conversion.idumc_id)
+                nombre_unidad_hijo = unidad_hijo.nombreum
+
+                # Crear un diccionario con los detalles de la conversión
+                detalle_conversion = {
+                    'id_conversion': conversion.ideum,
+                    'unidad_padre': {
+                        'id_um': conversion.idump_id,
+                        'nombre_um': nombre_unidad_padre,
+                    },
+                    'unidad_hijo': {
+                        'id_um': conversion.idumc_id,
+                        'nombre_um': nombre_unidad_hijo,
+                    },
+                    'cantidad_conversion': conversion.cantidadconversion,
+                }
+
+                # Agregar el diccionario a la lista de conversiones
+                lista_conversiones.append(detalle_conversion)
+
+            return JsonResponse({'conversiones': lista_conversiones})
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)

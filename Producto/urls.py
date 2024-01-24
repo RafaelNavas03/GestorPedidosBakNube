@@ -21,5 +21,6 @@ urlpatterns = [
     path('listarcomponentes/', ListarComponentes.as_view(), name='listar_componentes'),
     path('editarcomponente/<int:id_componente>/', EditarComponentex.as_view(), name='editar_componente'),
     path('eliminarcomponente/', EliminarComponentex.as_view(), name='eliminarcomponente'),
-    path('configurarensamble/', CrearEnsambleUnidadMedida.as_view(), name='CrearEnsambleUnidadMedida')
+    path('configurarensamble/', CrearEnsambleUnidadMedida.as_view(), name='CrearEnsambleUnidadMedida'),
+    path('conversionesum/', ListaConversiones.as_view(), name='ListaConversiones'),
 ]

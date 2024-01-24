@@ -98,7 +98,7 @@ CREATE TABLE EnsambleUnidadMedida (
     idEUM SERIAL PRIMARY KEY,
     idUMP INTEGER REFERENCES UnidadMedida(idUM),
 	idUMc INTEGER REFERENCES UnidadMedida(idUM),
-	CantidadConversion NUMERIC(9,2) NOT NULL
+	CantidadConversion NUMERIC(9,6) NOT NULL
 );
 
 
