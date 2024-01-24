@@ -22,10 +22,9 @@ class CrearInventario(View):
             fecha_entrega_esperada = request.POST.get('fecha_entrega_esperada')
             observacion_pedido = request.POST.get('observacion_pedido')
             proveedor_instance = get_object_or_404(Proveedores, id_proveedor=id_proveedor)
-            
-            # Obtener la bodega directamente de los parámetros de la URL
-            bodega_instance = get_object_or_404(Bodegas, id_bodega=id_bodega)
 
+            bodega_instance = get_object_or_404(Bodegas, id_bodega=id_bodega)
+            idumfinal=None
             # Crear el pedido
             pedido = Pedidosproveedor.objects.create(
                 id_proveedor=proveedor_instance,
@@ -45,36 +44,41 @@ class CrearInventario(View):
                 id_componente = detalle_pedido_data.get('id_componente')
                 cantidad_pedido = detalle_pedido_data['cantidad_pedido']
                 costo_unitario = detalle_pedido_data['costo_unitario']
-                id_um = detalle_pedido_data.get('id_um')
-
+                id_umid = detalle_pedido_data.get('id_um')
+                id_um= UnidadMedida.objects.get(idum=id_umid)
                 if id_producto and id_componente:
                     raise ValueError('Debe ingresar solo un componente o un producto.')
-
                 if id_producto:
                     producto_instance = get_object_or_404(Producto, id_producto=id_producto)
                     componente_instance = None
+                    idumfinal=producto_instance.id_um
+                    if(producto_instance.id_um != id_um):
+                        eum=EnsambleUnidadMedida.objects.get(idump=id_um,idumc=producto_instance.id_um)
+                        if(eum):
+                            cantidad_pedido=cantidad_pedido/eum.cantidadconversion
+                        else:
+                            raise ValueError('No hay conversión para esa unidad de medida, intenta registrar en '+producto_instance.id_um.nombreum+'.')
                 elif id_componente:
                     componente_instance = get_object_or_404(Componente, id_componente=id_componente)
                     producto_instance = None
+                    idumfinal=componente_instance.id_um
+                    if(componente_instance.id_um != id_um):
+                        eum=EnsambleUnidadMedida.objects.get(idump=componente_instance.id_um,idumc=id_um)
+                        if(eum):
+                            cantidad_pedido=cantidad_pedido/eum.cantidadconversion
+                        else:
+                            raise ValueError('No hay conversión para esa unidad de medida, intenta registrar en '+producto_instance.id_um.nombreum+'.')
+
                 else:
                     raise ValueError('Debe ingresar un componente o un producto.')
 
-                if componente_instance and id_um:
-                    raise ValueError('El componente no requiere una unidad de medida.')
-
-                if id_um:
-                    um_instance = get_object_or_404(UnidadMedida, idum=id_um)
-                else:
-                    um_instance = None
-
-                # Crear el detalle del pedido
                 detalle_pedido = Detallepedidoproveedor.objects.create(
                     id_pedidoproveedor=pedido,
                     id_producto=producto_instance,
                     id_componente=componente_instance,
                     cantidad=cantidad_pedido,
                     costounitario=costo_unitario,
-                    id_um=um_instance
+                    id_um=id_um
                 )
 
                 # Actualizar el inventario
@@ -82,7 +86,7 @@ class CrearInventario(View):
                     id_bodega=bodega_instance,
                     id_producto=producto_instance,
                     id_componente=componente_instance,
-                    id_um=um_instance,
+                    id_um=idumfinal,
                     defaults={'cantidad_disponible': cantidad_pedido, 'costo_unitario': costo_unitario}
                 )
 

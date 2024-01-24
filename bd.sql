@@ -94,6 +94,12 @@ CREATE TABLE UnidadMedida (
     nombreUM VARCHAR(100) NOT NULL,
 	SEstado CHAR(1) CHECK (SEstado IN ('0', '1')) NOT NULL
 );
+CREATE TABLE EnsambleUnidadMedida (
+    idEUM SERIAL PRIMARY KEY,
+    idUMP INTEGER REFERENCES UnidadMedida(idUM),
+	idUMc INTEGER REFERENCES UnidadMedida(idUM),
+	CantidadConversion NUMERIC(9,2) NOT NULL
+);
 
 
 CREATE TABLE TiposProductos (

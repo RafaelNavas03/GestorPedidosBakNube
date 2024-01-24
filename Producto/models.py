@@ -47,6 +47,16 @@ class UnidadMedida(models.Model):
     class Meta:
         managed = False
         db_table = 'unidadmedida'
+class EnsambleUnidadMedida(models.Model):
+    ideum = models.AutoField(primary_key=True)
+    idump = models.ForeignKey('UnidadMedida', on_delete=models.CASCADE, db_column='idump', related_name='ensambles_idump')
+    idumc = models.ForeignKey('UnidadMedida', on_delete=models.CASCADE, db_column='idumc', related_name='ensambles_idumc')
+    cantidadconversion = models.DecimalField(max_digits=9, decimal_places=2)
+
+    class Meta:
+        managed = False
+        db_table = 'ensambleunidadmedida'
+
 
 class Componente(models.Model):
     id_componente = models.AutoField(primary_key=True, db_column='id_componente')

@@ -713,3 +713,32 @@ def obtener_siguiente_codprincipal():
     siguiente_codprincipal = f'{siguiente_numero:025d}'
 
     return siguiente_codprincipal
+@method_decorator(csrf_exempt, name='dispatch')
+class CrearEnsambleUnidadMedida(View):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        try:
+            idump = request.POST.get('idump')
+            idumc = request.POST.get('idumc')
+            cantidadconversion = request.POST.get('cantidadconversion')
+            unidapadre=UnidadMedida.objects.get(idum=idump)
+            unidahijo=UnidadMedida.objects.get(idum=idumc)
+            ensamble_existente = EnsambleUnidadMedida.objects.filter(idump=unidapadre, idumc=unidahijo).first()
+            if ensamble_existente:
+                ensamble_existente.cantidadconversion = cantidadconversion
+                ensamble_existente.save()
+            else:
+                unidad_medida_padre = UnidadMedida.objects.get(idum=idump)
+                unidad_medida_hijo = UnidadMedida.objects.get(idum=idumc)
+                EnsambleUnidadMedida.objects.create(
+                    idump=unidad_medida_padre,
+                    idumc=unidad_medida_hijo,
+                    cantidadconversion=cantidadconversion
+                )
+
+            return JsonResponse({'mensaje': 'Ensamble de unidad de medida creado o actualizado con éxito'})
+
+        except UnidadMedida.DoesNotExist as e:
+            return JsonResponse({'error': 'Una o ambas unidades de medida no existen'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
