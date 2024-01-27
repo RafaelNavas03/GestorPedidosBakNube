@@ -10,6 +10,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 from decimal import Decimal 
 from Proveedores.models import *
+from datetime import datetime
+import traceback
 import json
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -18,8 +20,8 @@ class CrearInventario(View):
         try:
             # Obtener datos del pedido desde el request
             id_proveedor = request.POST.get('id_proveedor')
-            fecha_pedido = request.POST.get('fecha_pedido')
-            fecha_entrega_esperada = request.POST.get('fecha_entrega_esperada')
+            fecha_pedido = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            fecha_entrega_esperada = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             observacion_pedido = request.POST.get('observacion_pedido')
             proveedor_instance = get_object_or_404(Proveedores, id_proveedor=id_proveedor)
 
@@ -35,19 +37,20 @@ class CrearInventario(View):
                 observacion=observacion_pedido
             )
             detalles_pedido_raw = request.POST.get('detalles_pedido', '{}')
-            detalles_pedido = json.loads(detalles_pedido_raw)
 
+            detalles_pedido = json.loads(detalles_pedido_raw)
             # Iterar sobre los detalles del pedido
             for detalle_pedido_data in detalles_pedido['detalles_pedido']:
                 # Obtener datos del detalle del pedido desde el request
                 id_producto = detalle_pedido_data.get('id_producto')
                 id_componente = detalle_pedido_data.get('id_componente')
                 cantidad_pedido = detalle_pedido_data['cantidad_pedido']
+                print(cantidad_pedido)
                 costo_unitario = detalle_pedido_data['costo_unitario']
                 id_umid = detalle_pedido_data.get('id_um')
                 id_um= UnidadMedida.objects.get(idum=id_umid)
                 if id_producto and id_componente:
-                    raise ValueError('Debe ingresar solo un componente o un producto.')
+                    return JsonResponse({'error':'Debe ingresar solo un componente o un producto.'}, status=400)
                 if id_producto:
                     producto_instance = get_object_or_404(Producto, id_producto=id_producto)
                     componente_instance = None
@@ -55,23 +58,23 @@ class CrearInventario(View):
                     if(producto_instance.id_um != id_um):
                         eum=EnsambleUnidadMedida.objects.get(idump=id_um,idumc=producto_instance.id_um)
                         if(eum):
-                            cantidad_pedido=cantidad_pedido/eum.cantidadconversion
+                            cantidad_pedido = Decimal(cantidad_pedido) / eum.cantidadconversion
                         else:
-                            raise ValueError('No hay conversión para esa unidad de medida, intenta registrar en '+producto_instance.id_um.nombreum+'.')
+                            return JsonResponse({'error':'No hay conversión para esa unidad de medida, intenta registrar en '+producto_instance.id_um.nombreum+'.'}, status=400)
                 elif id_componente:
                     componente_instance = get_object_or_404(Componente, id_componente=id_componente)
                     producto_instance = None
                     idumfinal=componente_instance.id_um
                     if(componente_instance.id_um != id_um):
-                        eum=EnsambleUnidadMedida.objects.get(idump=componente_instance.id_um,idumc=id_um)
+                        eum=EnsambleUnidadMedida.objects.get(idump=componente_instance.id_um,idumc=id_um)#falla
                         if(eum):
-                            cantidad_pedido=cantidad_pedido/eum.cantidadconversion
+                            cantidad_pedido = Decimal(cantidad_pedido) / eum.cantidadconversion
+
                         else:
-                            raise ValueError('No hay conversión para esa unidad de medida, intenta registrar en '+producto_instance.id_um.nombreum+'.')
+                            return JsonResponse({'No hay conversión para esa unidad de medida, intenta registrar en '+componente_instance.id_um.nombreum+'.'}, status=400)
 
                 else:
                     raise ValueError('Debe ingresar un componente o un producto.')
-
                 detalle_pedido = Detallepedidoproveedor.objects.create(
                     id_pedidoproveedor=pedido,
                     id_producto=producto_instance,
@@ -98,6 +101,7 @@ class CrearInventario(View):
 
             return JsonResponse({'mensaje': 'Pedido y inventario creados con éxito'})
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=400)
 
 @method_decorator(csrf_exempt, name='dispatch')
