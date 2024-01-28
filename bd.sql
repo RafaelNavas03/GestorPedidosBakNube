@@ -310,14 +310,14 @@ CREATE TABLE Bodegas (
 );
 
 CREATE TABLE Inventario (
-	id_Inventario SERIAL PRIMARY KEY,
-	id_Bodega INTEGER REFERENCES Bodegas(id_Bodega ) NOT NULL,
-	id_Producto INTEGER REFERENCES Producto(id_Producto),
-	id_Componente INTEGER REFERENCES Componente(id_Componente),
-	Costo_unitario NUMERIC(9,2),
-	id_UM INTEGER REFERENCES UnidadMedida(idUM),
-	Stock_minimo DECIMAL(9,2),
-	Cantidad_disponible DECIMAL(9,2) NOT NULL
+    id_Inventario SERIAL PRIMARY KEY,
+    id_Bodega INTEGER REFERENCES Bodegas(id_Bodega) NOT NULL,
+    id_Producto INTEGER REFERENCES Producto(id_Producto),
+    id_Componente INTEGER REFERENCES Componente(id_Componente),
+    Costo_unitario NUMERIC(9,2),
+    id_UM INTEGER REFERENCES UnidadMedida(idUM),
+    Stock_minimo DECIMAL(9,2),
+    Cantidad_disponible DECIMAL(9,2) NOT NULL CHECK (Cantidad_disponible >= 0)
 );
 
 CREATE TABLE Procesamiento (

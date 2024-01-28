@@ -3,6 +3,7 @@ from django.db.models import Max, ExpressionWrapper, IntegerField
 from django.views import View
 from .models import *
 from Login.models import Cuenta
+from Bodega.models import Bodegas
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -16,10 +17,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator,EmptyPage
 from horariossemanales.models import Horariossemanales
+from Inventario.models import Inventario
 import json
 from django.db.models import Max, F
 from django.core.serializers import serialize
 from decimal import Decimal
+import traceback
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearTipoProducto(View):
@@ -537,8 +540,76 @@ class ListarComponentes(View):
         except Exception as e:
             # Manejar errores aquí
             return JsonResponse({'error': str(e)}, status=500)
-        
+@method_decorator(csrf_exempt, name='dispatch')
+class ComponentesDisponibles(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            id_componente = request.POST.get('id_componente')
+            cantxensamble = Decimal(request.POST.get('cantxensamble'))
+            catngenensamble = Decimal(request.POST.get('catngenensamble'))
+            id_componentegen = request.POST.get('id_componentegen')
+            cantxfabricar = Decimal(request.POST.get('cantxfabricar'))
+            componentepadre= Componente.objects.get(id_componente=id_componentegen)
+            componentehijo= Componente.objects.get(id_componente=id_componente)
+            id_bodega = Bodegas.objects.get(id_bodega=(request.POST.get('id_bodega')))
+            ensamble = EnsambleComponente.objects.get(id_componentepadre=componentepadre)
+            detalle = DetalleEnsambleComponente.objects.filter(id_ensamblec=ensamble, id_componentehijo=componentehijo)
+            
+            cantnecesaria = (cantxensamble * cantxfabricar) / catngenensamble
+            
+            inventario = Inventario.objects.get(id_componente=componentehijo, id_bodega=id_bodega)
+            
+            if float(cantnecesaria) <= float(inventario.cantidad_disponible):
+                print(1)
+                return JsonResponse({'mensaje': 1})
+            else:
+                print('Cantidad de fabricar: '+request.POST.get('cantxfabricar'))
+                print(0)
+                return JsonResponse({'mensaje': 0})
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+@method_decorator(csrf_exempt, name='dispatch')
+class FabricarComponente(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            lista_componentes = json.loads(request.POST.get('lista_componentes'))
+            cantidad_fabricar = Decimal(request.POST.get('cantidad_fabricar'))
+            id_componente_generado = request.POST.get('id_componente_generado')
+            id_bodega = request.POST.get('id_bodega')
+            bodega= Bodegas.objects.get(id_bodega=id_bodega)
+            componente= Componente.objects.get(id_componente=id_componente_generado)
+            # Restar la cantidad de cada componente en el inventario
+            for compo in lista_componentes:
+                print('Recorrer lista?')
+                detalle_componente = compo
+                id_componente = detalle_componente.get('key')
+                componentedet=Componente.objects.get(id_componente=id_componente)
+                cantidad_restar = Decimal(detalle_componente.get('quantity'))
 
+                inventario_componente = Inventario.objects.get(id_componente=componentedet, id_bodega=bodega)
+                inventario_componente.cantidad_disponible -= cantidad_restar
+                inventario_componente.save()
+            inventario_generado = Inventario.objects.filter(id_componente=componente, id_bodega=bodega)
+            if(inventario_generado.count()>0):
+                print('Esto pasa cuando sdfas?')
+                inventario_gen = Inventario.objects.get(id_componente=componente, id_bodega=bodega)
+                inventario_gen.cantidad_disponible += cantidad_fabricar
+                inventario_gen.save()
+            else:
+                print('Esto sucede?')
+                inventariocre= Inventario.objects.create(
+                    id_bodega = bodega,
+                    id_componente =  componente,
+                    id_um = componente.id_um,
+                    stock_minimo = '1',
+                    cantidad_disponible = cantidad_fabricar
+                )
+            print('Funciono?')
+            return JsonResponse({'mensaje': 'Operación exitosa'})
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
 @method_decorator(csrf_exempt, name='dispatch')
 class EditarComponentex(View):
     @transaction.atomic

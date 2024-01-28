@@ -23,4 +23,6 @@ urlpatterns = [
     path('eliminarcomponente/', EliminarComponentex.as_view(), name='eliminarcomponente'),
     path('configurarensamble/', CrearEnsambleUnidadMedida.as_view(), name='CrearEnsambleUnidadMedida'),
     path('conversionesum/', ListaConversiones.as_view(), name='ListaConversiones'),
+    path('componentenecesario/', ComponentesDisponibles.as_view(), name='ComponentesDisponibles'),
+    path('fabricarcomponente/', FabricarComponente.as_view(), name='FabricarComponente'),
 ]
