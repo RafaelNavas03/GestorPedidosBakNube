@@ -558,7 +558,9 @@ class ComponentesDisponibles(View):
             cantnecesaria = (cantxensamble * cantxfabricar) / catngenensamble
             
             inventario = Inventario.objects.get(id_componente=componentehijo, id_bodega=id_bodega)
-            
+            print(cantnecesaria)
+            print('<=')
+            print(float(inventario.cantidad_disponible))
             if float(cantnecesaria) <= float(inventario.cantidad_disponible):
                 print(1)
                 return JsonResponse({'mensaje': 1})
