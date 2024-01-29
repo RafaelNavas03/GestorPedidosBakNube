@@ -81,7 +81,8 @@ class CrearAviso(View):
                 titulo=titulo,
                 descripcion=descripcion,
                 imagen=image_64_encode,
-                id_empresa=Empresa.objects.filter(id_empresa=1).first()
+                id_empresa=Empresa.objects.filter(id_empresa=2).first(),
+                sestado=1
             )
             return JsonResponse({'mensaje': 'Se creo el aviso'})
         except Exception as e:

@@ -7,6 +7,7 @@ class AvisosPrincipales(models.Model):
     titulo = models.CharField(max_length=150)
     descripcion = models.CharField(max_length=500, blank=True, null=True)
     imagen = models.BinaryField(blank=True, null=True)
+    sestado = models.CharField(max_length=1)
 
     class Meta:
         managed = False
