@@ -11,4 +11,6 @@ urlpatterns = [
     path('phoneExist/', telefonoExist.as_view(), name='telefonoExist'),
     path('DocumentExist/', DocumentExist.as_view(), name='DocumentExist'),
     path('rol/', VerificarRolView.as_view(), name='rol'),
+    path('obtener_usuario/<str:nombre_usuario>/', ObtenerUsuariosView.as_view(), name='obtener_usuario'),
+
 ]
