@@ -1,4 +1,5 @@
 from django.db import models
+from Ubicaciones.models import Ubicaciones
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 
@@ -27,14 +28,13 @@ class Clientes(models.Model):
     snombre = models.CharField(max_length=300, null=True, blank=True)
     capellido = models.CharField(max_length=300, null=True, blank=True)
     cpuntos = models.DecimalField(max_digits=3, decimal_places=0, default=0) 
-    id_ubicacion1 = models.IntegerField(null=True, blank=True)  # Puedes cambiar esto según tus necesidades
+    id_ubicacion1 = models.ForeignKey(Ubicaciones, models.DO_NOTHING, db_column='id_ubicacion1', blank=True, null=True)
     id_ubicacion2 = models.IntegerField(null=True, blank=True)
     id_ubicacion3 = models.IntegerField(null=True, blank=True)
     id_cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE, db_column='id_cuenta')
     ruc_cedula = models.CharField(max_length=300, null=True, blank=True)
     ccorreo_electronico = models.CharField(max_length=300, null=True, blank=True)
     ubicacion = models.CharField(max_length=300, null=True, blank=True)
-    sestado = models.CharField(max_length=1)
     class Meta:
         managed = False
         db_table = 'clientes'

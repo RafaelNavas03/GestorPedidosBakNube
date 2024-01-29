@@ -8,6 +8,7 @@ from django.views import View
 from django.db import transaction
 import json
 from .models import Cuenta, Clientes
+from Ubicaciones.models import Ubicaciones
 from django.contrib.auth.hashers import make_password, check_password
 from Administrador.models import Administrador
 from rest_framework.views import APIView
@@ -16,6 +17,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 import jwt
 from django.conf import settings
+from django.shortcuts import get_object_or_404
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearUsuarioView(View):
@@ -32,7 +35,14 @@ class CrearUsuarioView(View):
             capellido=data.get('capellido')
             ruc_cedula= data.get('ruc_cedula')
             correorecuperacion=data.get('correorecuperacion')
-            ubicacion=data.get('ubicacion')
+            latitudx = data.get('latitud')
+            longitudx = data.get('longitud')
+
+
+            nueva_ubicacion = Ubicaciones.objects.create(
+                latitud=latitudx,
+                longitud=longitudx,
+            )
 
             user = User.objects.create_user(username=nombre_usuario, password=contrasenia)
 
@@ -42,7 +52,7 @@ class CrearUsuarioView(View):
                 contrasenia= make_password(contrasenia),
                 estadocuenta ='1',
                 rol = 'C',
-                correorecuperacion =correorecuperacion,
+                correorecuperacion =correorecuperacion
             )
 
             # Crear un nuevo cliente asociado al usuario y la cuenta
@@ -55,8 +65,7 @@ class CrearUsuarioView(View):
                 capellido = capellido,
                 ruc_cedula = ruc_cedula,
                 ccorreo_electronico = correorecuperacion,
-                ubicacion = ubicacion,
-                sestado = '1'
+               id_ubicacion1=nueva_ubicacion,
             )
         
 
@@ -98,7 +107,7 @@ class IniciarSesionView(View):
                     if cuenta:
                         token = self.generate_token(cuenta)
 
-                        return JsonResponse({'token': token})
+                        return JsonResponse({'token': token, 'nombreusuario': nombre_usuario})
                     else:
                         return JsonResponse({'mensaje': 'La cuenta asociada al usuario no tiene información'}, status=404)
                 else:
@@ -277,5 +286,41 @@ class DocumentExist(View):
             return JsonResponse({'mensaje': '0'})
         
             
+        except Exception as e:
+            return JsonResponse({'error xd': str(e)}, status=400)
+
+
+class ObtenerUsuariosView(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            nombre_usuario = kwargs.get('nombre_usuario')  # Obtén el nombre de usuario de la URL
+
+            if nombre_usuario is not None:
+                # Si se proporciona un nombre de usuario, intenta obtener un solo usuario
+                cuenta = get_object_or_404(Cuenta, nombreusuario=nombre_usuario)
+                cliente = get_object_or_404(Clientes, id_cuenta=cuenta)
+
+                ubicacion_data = {
+                    'latitud': cliente.id_ubicacion1.latitud,
+                    'longitud': cliente.id_ubicacion1.longitud,
+                    # Agrega otros campos de Ubicaciones que necesites
+                }
+
+                usuario_data = {
+                    'nombre_usuario': cuenta.nombreusuario,
+                    'telefono': cliente.ctelefono,
+                    'razon_social': cliente.crazon_social,
+                    'tipo_cliente': cliente.tipocliente,
+                    'snombre': cliente.snombre,
+                    'capellido': cliente.capellido,
+                    'ruc_cedula': cliente.ruc_cedula,
+                    'ubicacion1': ubicacion_data ,
+                }
+
+                return JsonResponse({'usuario': usuario_data})
+            else:
+                # Si no se proporciona un nombre de usuario, retorna un error
+                return JsonResponse({'error': 'Nombre de usuario no proporcionado'}, status=400)
+
         except Exception as e:
             return JsonResponse({'error xd': str(e)}, status=400)
