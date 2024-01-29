@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'Recompensas',
     'corsheaders', 
     'rest_framework', 
-    'rest_framework_simplejwt.token_blacklist' 
+    'rest_framework_simplejwt.token_blacklist',
+    'channels', 
 
 ]
 
@@ -103,10 +104,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'HamburguesaProyecto.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+ASGI_APPLICATION = 'HamburguesaProyecto.asgi.application'
 
 DATABASES = {
     'default': {
