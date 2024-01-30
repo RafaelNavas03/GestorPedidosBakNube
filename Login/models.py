@@ -46,7 +46,8 @@ class Ubicaciones(models.Model):
     latitud = models.DecimalField(max_digits=9, decimal_places=6)
     longitud = models.DecimalField(max_digits=9, decimal_places=6)
     udescripcion = models.CharField(max_length=500, null=True, blank=True)
-
+    sestado = models.CharField(max_length=1)
+    
     def __str__(self):
         return f'Ubicacion {self.id_Ubicacion}: {self.Latitud}, {self.Longitud}'
     class Meta:

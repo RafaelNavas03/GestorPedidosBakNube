@@ -38,16 +38,7 @@ class CrearUsuarioView(View):
             correorecuperacion=data.get('correorecuperacion')
             latitudx = data.get('latitud')
             longitudx = data.get('longitud')
-
-
-            nueva_ubicacion = Ubicaciones.objects.create(
-                latitud=latitudx,
-                longitud=longitudx,
-            )
-
             user = User.objects.create_user(username=nombre_usuario, password=contrasenia)
-
-
             cuenta_nueva  = Cuenta.objects.create(
                 nombreusuario=nombre_usuario,
                 contrasenia= make_password(contrasenia),
@@ -55,27 +46,40 @@ class CrearUsuarioView(View):
                 rol = 'C',
                 correorecuperacion =correorecuperacion
             )
-
-            # Crear un nuevo cliente asociado al usuario y la cuenta
-            cliente_nuevo  = Clientes.objects.create(
-                ctelefono=ctelefono,
-                id_cuenta=cuenta_nueva,
-                crazon_social = razons,
-                tipocliente = tipocliente,
-                snombre = snombre,
-                capellido = capellido,
-                ruc_cedula = ruc_cedula,
-                ccorreo_electronico = correorecuperacion,
-                id_ubicacion1=nueva_ubicacion,
-                sestado=1
-            )
-        
-
+            if(latitudx and longitudx):
+                print('XD');
+                nueva_ubicacion = Ubicaciones.objects.create(
+                    latitud=latitudx,
+                    longitud=longitudx,
+                    sestado=1
+                )
+                cliente_nuevo  = Clientes.objects.create(
+                    ctelefono=ctelefono,
+                    id_cuenta=cuenta_nueva,
+                    crazon_social = razons,
+                    tipocliente = tipocliente,
+                    snombre = snombre,
+                    capellido = capellido,
+                    ruc_cedula = ruc_cedula,
+                    ccorreo_electronico = correorecuperacion,
+                    id_ubicacion1=nueva_ubicacion,
+                    sestado=1
+                )
+            else:
+                cliente_nuevo  = Clientes.objects.create(
+                    ctelefono=ctelefono,
+                    id_cuenta=cuenta_nueva,
+                    crazon_social = razons,
+                    tipocliente = tipocliente,
+                    snombre = snombre,
+                    capellido = capellido,
+                    ruc_cedula = ruc_cedula,
+                    ccorreo_electronico = correorecuperacion,
+                    sestado=1
+                )
             return JsonResponse({'mensaje': 'Usuario creado con éxito'})
-        
-            
         except Exception as e:
-            return JsonResponse({'error xd': str(e)}, status=400)
+            return JsonResponse({'error': str(e)}, status=400)
 
 
 class IniciarSesionView(View):
