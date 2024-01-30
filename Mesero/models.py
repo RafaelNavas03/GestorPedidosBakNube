@@ -5,7 +5,7 @@ from Cliente.models import Clientes
 from Mesa.models import Mesas
 from Producto.models import *
 from Combos.models import *
-from Promociones.models import Promociones
+#from Promociones.models import Promociones
 # Create your models here.
 class Cuenta(models.Model):
     id_cuenta = models.AutoField(primary_key=True)
@@ -70,7 +70,7 @@ class Detallepedidos(models.Model):
     id_pedido = models.ForeignKey(Pedidos, models.DO_NOTHING, db_column='id_pedido')
     id_producto = models.ForeignKey(Producto, models.DO_NOTHING, db_column='id_producto', blank=True, null=True)
     id_combo = models.ForeignKey(Combo, models.DO_NOTHING, db_column='id_combo', blank=True, null=True)
-    id_promocion = models.ForeignKey(Promociones, models.DO_NOTHING, db_column='id_promocion', blank=True, null=True)
+    #id_promocion = models.ForeignKey(Promociones, models.DO_NOTHING, db_column='id_promocion', blank=True, null=True)
     cantidad = models.DecimalField(max_digits=65535, decimal_places=65535)
     precio_unitario = models.DecimalField(max_digits=9, decimal_places=2, blank=True, null=True)
     impuesto = models.DecimalField(max_digits=9, decimal_places=2, blank=True, null=True)
