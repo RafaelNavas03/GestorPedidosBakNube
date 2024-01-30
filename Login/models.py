@@ -35,6 +35,8 @@ class Clientes(models.Model):
     ruc_cedula = models.CharField(max_length=300, null=True, blank=True)
     ccorreo_electronico = models.CharField(max_length=300, null=True, blank=True)
     ubicacion = models.CharField(max_length=300, null=True, blank=True)
+    sestado = models.CharField(max_length=1)
+
     class Meta:
         managed = False
         db_table = 'clientes'
