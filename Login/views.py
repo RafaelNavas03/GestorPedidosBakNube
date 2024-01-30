@@ -9,6 +9,7 @@ from django.db import transaction
 import json
 from .models import Cuenta, Clientes
 from Ubicaciones.models import Ubicaciones
+from Mesero.models import Meseros
 from django.contrib.auth.hashers import make_password, check_password
 from Administrador.models import Administrador
 from rest_framework.views import APIView
@@ -65,7 +66,8 @@ class CrearUsuarioView(View):
                 capellido = capellido,
                 ruc_cedula = ruc_cedula,
                 ccorreo_electronico = correorecuperacion,
-               id_ubicacion1=nueva_ubicacion,
+                id_ubicacion1=nueva_ubicacion,
+                sestado=1
             )
         
 
@@ -185,13 +187,29 @@ class VerificarRolView(View):
         # Realiza acciones específicas para el rol de Administrador
         return JsonResponse({'mensaje': 'Inicio de sesión exitoso como Administrador'})
     def handle_mesero(self, cuenta):
-        # Realiza acciones específicas para el rol de Administrador
-        return JsonResponse({'mensaje': 'Inicio de sesión exitoso como Administrador'})
+        mesero = Meseros.objects.filter(id_cuenta=cuenta.id_cuenta).first()
+
+        if mesero:
+            mesero_info = {
+                'id_mesero': mesero.id_mesero,
+                'telefono': mesero.telefono,
+                'apellido': mesero.apellido,
+                'nombre': mesero.nombre,
+                'id_sucursal': mesero.id_sucursal.id_sucursal,
+                'id_administrador': mesero.id_administrador.id_administrador,
+                'fecha_registro': mesero.fecha_registro,
+                'id_cuenta': mesero.id_cuenta.id_cuenta,
+                'estado': mesero.sestado,
+            }
+            return JsonResponse({'mensaje': 'Inicio de sesión exitoso como Mesero', 'mesero_info': mesero_info})
+        else:
+            return JsonResponse({'error': 'No se encontró información del mesero asociado a esta cuenta'}, status=404)
     def handle_motorizado(self, cuenta):
         # Realiza acciones específicas para el rol de Administrador
         return JsonResponse({'mensaje': 'Inicio de sesión exitoso como Administrador'})
     def handle_default(self, cuenta):
         return JsonResponse({'mensaje': 'Rol no reconocido'}, status=400)
+    
 @method_decorator(csrf_exempt, name='dispatch')
 class CerrarSesionView(View):
     def post(self, request, *args, **kwargs):
