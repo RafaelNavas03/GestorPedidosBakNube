@@ -88,11 +88,8 @@ class EditarMesa(View):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
         
+@method_decorator(csrf_exempt, name='dispatch')
 class CrearReservacion(View):
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         try:
@@ -102,16 +99,19 @@ class CrearReservacion(View):
             hora_reserva = request.POST.get('hora_reserva')
             estado = request.POST.get('estado')
 
-            # Obtén el objeto cliente de manera segura
-            cliente = get_object_or_404(Clientes, id_cliente=id_cliente)
-            mesa = get_object_or_404(Mesas, id_mesa=id_mesa)
+            # Asegúrate de que los valores de estado sean válidos
+            if estado not in ['E', 'D', 'F']:
+                return JsonResponse({'error': 'Valor no válido para estado'}, status=400)
+
+            cliente = Clientes.objects.get(id_cliente=id_cliente)
+            mesa = Mesas.objects.get(id_mesa=id_mesa)
 
             reservacion = Reservaciones(
-                id_Cliente=cliente,
-                id_Mesa=mesa,
-                Fecha_reserva=fecha_reserva,
-                Hora_reserva=hora_reserva,
-                Estado=estado
+                id_cliente=cliente,
+                id_mesa=mesa,
+                fecha_reserva=fecha_reserva,
+                hora_reserva=hora_reserva,
+                estado=estado
             )
             reservacion.save()
 
