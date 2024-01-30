@@ -960,6 +960,7 @@ class CrearEnsambleUnidadMedida(View):
         except UnidadMedida.DoesNotExist as e:
             return JsonResponse({'error': 'Una o ambas unidades de medida no existen'}, status=400)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=400)
 class ListaConversiones(View):
     def get(self, request, *args, **kwargs):
