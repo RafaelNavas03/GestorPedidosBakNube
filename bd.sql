@@ -368,15 +368,12 @@ CREATE TABLE HorariosProductosSemana (
 );
 
 CREATE TABLE Reservaciones (
-	id_Reservacion SERIAL PRIMARY KEY,
-	id_Cliente INTEGER REFERENCES Clientes(id_Cliente) NOT NULL,
-	id_Mesa INTEGER REFERENCES Mesas(id_Mesa) NOT NULL,
-	Cantidad_personas  NUMERIC NOT NULL,
-	Hora_inicio TIMESTAMP NOT NULL,
-	Hora_fin TIMESTAMP,
-	Hora_llegada TIMESTAMP,	
-	Estado CHAR(1) check (Estado IN ('E', 'D', 'F')) NOT NULL,
-	Observacion_cliente VARCHAR(500)
+    id_Reservacion SERIAL PRIMARY KEY,
+    id_Cliente INTEGER REFERENCES Clientes(id_Cliente) NOT NULL,
+    id_Mesa INTEGER REFERENCES Mesas(id_Mesa) NOT NULL,
+    Fecha_reserva DATE NOT NULL,
+    Hora_reserva TIME NOT NULL,    
+    Estado CHAR(1) check (Estado IN ('E', 'D', 'F')) NOT NULL
 );
 
 
