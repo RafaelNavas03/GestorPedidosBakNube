@@ -11,6 +11,7 @@ from PIL import Image, UnidentifiedImageError
 import base64
 from Producto.views import obtener_siguiente_codprincipal
 import json
+import traceback
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearCategoriaCombo(View):
@@ -137,6 +138,7 @@ class CrearCombo(View):
 
             return JsonResponse({'mensaje': 'Combo creado con éxito'})
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=400)
 @method_decorator(login_required, name='dispatch')
 @method_decorator(csrf_exempt, name='dispatch')
