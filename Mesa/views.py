@@ -1,10 +1,13 @@
+from django.shortcuts import get_object_or_404
 from django.views import View
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db import transaction
 
-from .models import Administrador, Mesas
+from Cliente.models import Clientes
+
+from .models import *
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CrearMesa(View):
@@ -82,5 +85,36 @@ class EditarMesa(View):
             mesa.save()
 
             return JsonResponse({'mensaje': 'Mesa editada con éxito'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        
+class CrearReservacion(View):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        try:
+            id_cliente = request.POST.get('id_cliente')
+            id_mesa = request.POST.get('id_mesa')
+            fecha_reserva = request.POST.get('fecha_reserva')
+            hora_reserva = request.POST.get('hora_reserva')
+            estado = request.POST.get('estado')
+
+            # Obtén el objeto cliente de manera segura
+            cliente = get_object_or_404(Clientes, id_cliente=id_cliente)
+            mesa = get_object_or_404(Mesas, id_mesa=id_mesa)
+
+            reservacion = Reservaciones(
+                id_Cliente=cliente,
+                id_Mesa=mesa,
+                Fecha_reserva=fecha_reserva,
+                Hora_reserva=hora_reserva,
+                Estado=estado
+            )
+            reservacion.save()
+
+            return JsonResponse({'mensaje': 'Reservación creada con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
