@@ -327,7 +327,7 @@ class CrearProducto(View):
             # Crear el producto
             categoria = Categorias.objects.get(id_categoria=id_categoria)
             unidad_medida = UnidadMedida.objects.get(idum=id_um)
-
+            cantidadpadre = Decimal(request.POST.get('cantidad', 0))
             producto = Producto.objects.create(
                 id_categoria=categoria,
                 id_um=unidad_medida,
@@ -342,7 +342,22 @@ class CrearProducto(View):
                 irbpnr=irbpnr,
                 sestado = 1
             )
-            producto.save()
+            detalle_comp = json.loads(request.POST.get('detalle_comp', '[]'))
+            ensambleproducto = EnsambleProducto.objects.create(
+                id_producto=producto,
+                padrecantidad=cantidadpadre,
+                id_um=unidad_medida  # Ajusta esta línea según tu lógica
+            )
+            for detalle_data in detalle_comp:
+                componente_hijo = Componente.objects.get(id_componente=detalle_data['id'])
+                um = componente_hijo.id_um
+                detalleEnsambleProducto = DetalleEnsambleProducto.objects.create(
+                    id_emsamblep=ensambleproducto,
+                    id_componentehijo=componente_hijo,
+                    cantidadhijo=detalle_data['cantidad'],
+                    id_umhijo=um
+                )
+            producto.save()        
 
             return JsonResponse({'mensaje': 'Producto creado con éxito'})
         except Exception as e:
@@ -747,26 +762,66 @@ class ListarProductos(View):
                         'id_sucursal': horarioss.id_sucursal.id_sucursal,
                     }
                     lista_horario.append(datos_horario)
-                datos_producto = {
-                    'id_producto': producto.id_producto,
-                    'id_categoria': producto.id_categoria.id_categoria,
-                    'id_um': producto.id_um.idum,
-                    'puntosp': producto.puntosp,
-                    'codprincipal': producto.codprincipal,
-                    'nombreproducto': producto.nombreproducto,
-                    'descripcionproducto': producto.descripcionproducto,
-                    'preciounitario': str(producto.preciounitario),
-                    'iva': producto.iva,
-                    'ice': producto.ice,
-                    'irbpnr': producto.irbpnr,
-                    'horarios': lista_horario,
-                    'imagenp': imagen_base64,
-                }
-                lista_horario = []
-
-                lista_productos.append(datos_producto)
-
-            # Devolver la lista de productos paginada en formato JSON
+                ensambleexi = EnsambleProducto.objects.filter(id_producto=producto)
+                if (ensambleexi.exists()):
+                    ensamble=EnsambleProducto.objects.get(id_producto=producto)
+                    detallesensamble=DetalleEnsambleProducto.objects.filter(id_emsamblep=ensamble)
+                    lista_detalle = []
+                    for detalle in detallesensamble:
+                        hijo={
+                            'id':detalle.id_componentehijo.id_componente,
+                            'nombre':detalle.id_componentehijo.nombre
+                        }
+                        um={
+                            'id':detalle.id_umhijo.idum,
+                            'nombre':detalle.id_umhijo.nombreum
+                        }
+                        ensamble_data = {
+                            'id_componentehijo':hijo,
+                            'cantidadhijo': detalle.cantidadhijo,
+                            'um':um
+                        }
+                        lista_detalle.append(ensamble_data)
+                    compdata={
+                        'padrecant':ensamble.padrecantidad,
+                        'detalle':lista_detalle
+                    }
+                    datos_producto = {
+                        'id_producto': producto.id_producto,
+                        'id_categoria': producto.id_categoria.id_categoria,
+                        'id_um': producto.id_um.idum,
+                        'puntosp': producto.puntosp,
+                        'codprincipal': producto.codprincipal,
+                        'nombreproducto': producto.nombreproducto,
+                        'descripcionproducto': producto.descripcionproducto,
+                        'preciounitario': str(producto.preciounitario),
+                        'iva': producto.iva,
+                        'ice': producto.ice,
+                        'irbpnr': producto.irbpnr,
+                        'horarios': lista_horario,
+                        'imagenp': imagen_base64,
+                        'detalle':compdata,
+                    }
+                    lista_horario = []
+                    lista_productos.append(datos_producto)
+                else:
+                    datos_producto = {
+                        'id_producto': producto.id_producto,
+                        'id_categoria': producto.id_categoria.id_categoria,
+                        'id_um': producto.id_um.idum,
+                        'puntosp': producto.puntosp,
+                        'codprincipal': producto.codprincipal,
+                        'nombreproducto': producto.nombreproducto,
+                        'descripcionproducto': producto.descripcionproducto,
+                        'preciounitario': str(producto.preciounitario),
+                        'iva': producto.iva,
+                        'ice': producto.ice,
+                        'irbpnr': producto.irbpnr,
+                        'horarios': lista_horario,
+                        'imagenp': imagen_base64,
+                    }
+                    lista_horario = []
+                    lista_productos.append(datos_producto)
             return JsonResponse({'productos': lista_productos, 'total': paginator.count}, safe=False)
 
         except Exception as e:
