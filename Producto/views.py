@@ -327,7 +327,7 @@ class CrearProducto(View):
             # Crear el producto
             categoria = Categorias.objects.get(id_categoria=id_categoria)
             unidad_medida = UnidadMedida.objects.get(idum=id_um)
-
+            cantidadpadre = Decimal(request.POST.get('cantidad', 0))
             producto = Producto.objects.create(
                 id_categoria=categoria,
                 id_um=unidad_medida,
@@ -342,7 +342,22 @@ class CrearProducto(View):
                 irbpnr=irbpnr,
                 sestado = 1
             )
-            producto.save()
+            detalle_comp = json.loads(request.POST.get('detalle_comp', '[]'))
+            ensambleproducto = EnsambleProducto.objects.create(
+                id_producto=producto,
+                padrecantidad=cantidadpadre,
+                id_um=unidad_medida  # Ajusta esta línea según tu lógica
+            )
+            for detalle_data in detalle_comp:
+                componente_hijo = Componente.objects.get(id_componente=detalle_data['id'])
+                um = componente_hijo.id_um
+                detalleEnsambleProducto = DetalleEnsambleProducto.objects.create(
+                    id_emsamblep=ensambleproducto,
+                    id_componentehijo=componente_hijo,
+                    cantidadhijo=detalle_data['cantidad'],
+                    id_umhijo=um
+                )
+            producto.save()        
 
             return JsonResponse({'mensaje': 'Producto creado con éxito'})
         except Exception as e:
@@ -572,6 +587,37 @@ class ComponentesDisponibles(View):
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 @method_decorator(csrf_exempt, name='dispatch')
+class ComponentesDisponiblesPro(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            id_componente = request.POST.get('id_componente')
+            cantxensamble = Decimal(request.POST.get('cantxensamble'))
+            catngenensamble = Decimal(request.POST.get('catngenensamble'))
+            id_productogen = request.POST.get('id_productogen')
+            cantxfabricar = Decimal(request.POST.get('cantxfabricar'))
+            productopadre= Producto.objects.get(id_producto=id_productogen)
+            componentehijo= Componente.objects.get(id_componente=id_componente)
+            id_bodega = Bodegas.objects.get(id_bodega=(request.POST.get('id_bodega')))
+            ensamble = EnsambleProducto.objects.get(id_producto=productopadre)
+            detalle = DetalleEnsambleProducto.objects.filter(id_emsamblep=ensamble, id_componentehijo=componentehijo)
+            
+            cantnecesaria = (cantxensamble * cantxfabricar) / catngenensamble
+            
+            inventario = Inventario.objects.get(id_componente=componentehijo, id_bodega=id_bodega)
+            print(cantnecesaria)
+            print('<=')
+            print(float(inventario.cantidad_disponible))
+            if float(cantnecesaria) <= float(inventario.cantidad_disponible):
+                print(1)
+                return JsonResponse({'mensaje': 1})
+            else:
+                print('Cantidad de fabricar: '+request.POST.get('cantxfabricar'))
+                print(0)
+                return JsonResponse({'mensaje': 0})
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+@method_decorator(csrf_exempt, name='dispatch')
 class FabricarComponente(View):
     def post(self, request, *args, **kwargs):
         try:
@@ -604,6 +650,47 @@ class FabricarComponente(View):
                     id_bodega = bodega,
                     id_componente =  componente,
                     id_um = componente.id_um,
+                    stock_minimo = '1',
+                    cantidad_disponible = cantidad_fabricar
+                )
+            print('Funciono?')
+            return JsonResponse({'mensaje': 'Operación exitosa'})
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+@method_decorator(csrf_exempt, name='dispatch')
+class FabricarProducto(View):
+    def post(self, request, *args, **kwargs):
+        try:
+            lista_componentes = json.loads(request.POST.get('lista_componentes'))
+            cantidad_fabricar = Decimal(request.POST.get('cantidad_fabricar'))
+            id_producto_generado = request.POST.get('id_producto_generado')
+            id_bodega = request.POST.get('id_bodega')
+            bodega= Bodegas.objects.get(id_bodega=id_bodega)
+            producto= Producto.objects.get(id_producto=id_producto_generado)
+            # Restar la cantidad de cada componente en el inventario
+            for compo in lista_componentes:
+                print('Recorrer lista?')
+                detalle_componente = compo
+                id_componente = detalle_componente.get('key')
+                componentedet=Componente.objects.get(id_componente=id_componente)
+                cantidad_restar = Decimal(detalle_componente.get('quantity'))
+
+                inventario_componente = Inventario.objects.get(id_componente=componentedet, id_bodega=bodega)
+                inventario_componente.cantidad_disponible -= cantidad_restar
+                inventario_componente.save()
+            inventario_generado = Inventario.objects.filter(id_producto=producto, id_bodega=bodega)
+            if(inventario_generado.count()>0):
+                print('Esto pasa cuando sdfas?')
+                inventario_gen = Inventario.objects.get(id_producto=producto, id_bodega=bodega)
+                inventario_gen.cantidad_disponible += cantidad_fabricar
+                inventario_gen.save()
+            else:
+                print('Esto sucede?')
+                inventariocre= Inventario.objects.create(
+                    id_bodega = bodega,
+                    id_producto =  producto,
+                    id_um = producto.id_um,
                     stock_minimo = '1',
                     cantidad_disponible = cantidad_fabricar
                 )
@@ -711,8 +798,8 @@ class ListarProductos(View):
     def get(self, request, *args, **kwargs):
         try:
             # Parámetros de paginación y búsqueda
-            page = int(request.GET.get('page', 1))
-            size = int(request.GET.get('size', 8))
+            page = int(request.GET.get('page',1))
+            size = int(request.GET.get('size', 10))
             search = request.GET.get('search', '')
 
             # Filtrar productos por término de búsqueda
@@ -747,26 +834,66 @@ class ListarProductos(View):
                         'id_sucursal': horarioss.id_sucursal.id_sucursal,
                     }
                     lista_horario.append(datos_horario)
-                datos_producto = {
-                    'id_producto': producto.id_producto,
-                    'id_categoria': producto.id_categoria.id_categoria,
-                    'id_um': producto.id_um.idum,
-                    'puntosp': producto.puntosp,
-                    'codprincipal': producto.codprincipal,
-                    'nombreproducto': producto.nombreproducto,
-                    'descripcionproducto': producto.descripcionproducto,
-                    'preciounitario': str(producto.preciounitario),
-                    'iva': producto.iva,
-                    'ice': producto.ice,
-                    'irbpnr': producto.irbpnr,
-                    'horarios': lista_horario,
-                    'imagenp': imagen_base64,
-                }
-                lista_horario = []
-
-                lista_productos.append(datos_producto)
-
-            # Devolver la lista de productos paginada en formato JSON
+                ensambleexi = EnsambleProducto.objects.filter(id_producto=producto)
+                if (ensambleexi.exists()):
+                    ensamble=EnsambleProducto.objects.get(id_producto=producto)
+                    detallesensamble=DetalleEnsambleProducto.objects.filter(id_emsamblep=ensamble)
+                    lista_detalle = []
+                    for detalle in detallesensamble:
+                        hijo={
+                            'id':detalle.id_componentehijo.id_componente,
+                            'nombre':detalle.id_componentehijo.nombre
+                        }
+                        um={
+                            'id':detalle.id_umhijo.idum,
+                            'nombre':detalle.id_umhijo.nombreum
+                        }
+                        ensamble_data = {
+                            'id_componentehijo':hijo,
+                            'cantidadhijo': detalle.cantidadhijo,
+                            'um':um
+                        }
+                        lista_detalle.append(ensamble_data)
+                    compdata={
+                        'padrecant':ensamble.padrecantidad,
+                        'detalle':lista_detalle
+                    }
+                    datos_producto = {
+                        'id_producto': producto.id_producto,
+                        'id_categoria': producto.id_categoria.id_categoria,
+                        'id_um': producto.id_um.idum,
+                        'puntosp': producto.puntosp,
+                        'codprincipal': producto.codprincipal,
+                        'nombreproducto': producto.nombreproducto,
+                        'descripcionproducto': producto.descripcionproducto,
+                        'preciounitario': str(producto.preciounitario),
+                        'iva': producto.iva,
+                        'ice': producto.ice,
+                        'irbpnr': producto.irbpnr,
+                        'horarios': lista_horario,
+                        'imagenp': imagen_base64,
+                        'detalle':compdata,
+                    }
+                    lista_horario = []
+                    lista_productos.append(datos_producto)
+                else:
+                    datos_producto = {
+                        'id_producto': producto.id_producto,
+                        'id_categoria': producto.id_categoria.id_categoria,
+                        'id_um': producto.id_um.idum,
+                        'puntosp': producto.puntosp,
+                        'codprincipal': producto.codprincipal,
+                        'nombreproducto': producto.nombreproducto,
+                        'descripcionproducto': producto.descripcionproducto,
+                        'preciounitario': str(producto.preciounitario),
+                        'iva': producto.iva,
+                        'ice': producto.ice,
+                        'irbpnr': producto.irbpnr,
+                        'horarios': lista_horario,
+                        'imagenp': imagen_base64,
+                    }
+                    lista_horario = []
+                    lista_productos.append(datos_producto)
             return JsonResponse({'productos': lista_productos, 'total': paginator.count}, safe=False)
 
         except Exception as e:

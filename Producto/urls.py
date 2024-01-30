@@ -24,5 +24,7 @@ urlpatterns = [
     path('configurarensamble/', CrearEnsambleUnidadMedida.as_view(), name='CrearEnsambleUnidadMedida'),
     path('conversionesum/', ListaConversiones.as_view(), name='ListaConversiones'),
     path('componentenecesario/', ComponentesDisponibles.as_view(), name='ComponentesDisponibles'),
+    path('componentenecesariop/', ComponentesDisponiblesPro.as_view(), name='ComponentesDisponiblesPro'),
     path('fabricarcomponente/', FabricarComponente.as_view(), name='FabricarComponente'),
+    path('fabricarproducto/', FabricarProducto.as_view(), name='FabricarProducto'),
 ]
