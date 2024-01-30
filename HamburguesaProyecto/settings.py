@@ -48,8 +48,7 @@ INSTALLED_APPS = [
     'Recompensas',
     'corsheaders', 
     'rest_framework', 
-    'rest_framework_simplejwt.token_blacklist',
-    'channels', 
+    'rest_framework_simplejwt.token_blacklist' 
 
 ]
 
@@ -104,14 +103,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'HamburguesaProyecto.wsgi.application'
-ASGI_APPLICATION = 'HamburguesaProyecto.asgi.application'
+
+
+# Database
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'PedidosDB4',
+        'NAME': 'hamburguesas2',
         'USER': 'postgres',
-        'PASSWORD': '12345',
+        'PASSWORD': '1234',
         'HOST': 'localhost',
         'PORT': '5432',
         'OPTIONS': {
