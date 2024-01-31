@@ -327,7 +327,6 @@ class CrearProducto(View):
             # Crear el producto
             categoria = Categorias.objects.get(id_categoria=id_categoria)
             unidad_medida = UnidadMedida.objects.get(idum=id_um)
-            cantidadpadre = Decimal(request.POST.get('cantidad', 0))
             producto = Producto.objects.create(
                 id_categoria=categoria,
                 id_um=unidad_medida,
@@ -342,25 +341,29 @@ class CrearProducto(View):
                 irbpnr=irbpnr,
                 sestado = 1
             )
-            detalle_comp = json.loads(request.POST.get('detalle_comp', '[]'))
-            ensambleproducto = EnsambleProducto.objects.create(
-                id_producto=producto,
-                padrecantidad=cantidadpadre,
-                id_um=unidad_medida  # Ajusta esta línea según tu lógica
-            )
-            for detalle_data in detalle_comp:
-                componente_hijo = Componente.objects.get(id_componente=detalle_data['id'])
-                um = componente_hijo.id_um
-                detalleEnsambleProducto = DetalleEnsambleProducto.objects.create(
-                    id_emsamblep=ensambleproducto,
-                    id_componentehijo=componente_hijo,
-                    cantidadhijo=detalle_data['cantidad'],
-                    id_umhijo=um
+            detalle_comp = json.loads(request.POST.get('detalle_comp'))
+            if detalle_comp:
+                cantidadpadre = Decimal(request.POST.get('cantidad', 0))
+                
+                ensambleproducto = EnsambleProducto.objects.create(
+                    id_producto=producto,
+                    padrecantidad=cantidadpadre,
+                    id_um=unidad_medida  # Ajusta esta línea según tu lógica
                 )
+                for detalle_data in detalle_comp:
+                    componente_hijo = Componente.objects.get(id_componente=detalle_data['id'])
+                    um = componente_hijo.id_um
+                    detalleEnsambleProducto = DetalleEnsambleProducto.objects.create(
+                        id_emsamblep=ensambleproducto,
+                        id_componentehijo=componente_hijo,
+                        cantidadhijo=detalle_data['cantidad'],
+                        id_umhijo=um
+                    )
             producto.save()        
 
             return JsonResponse({'mensaje': 'Producto creado con éxito'})
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=400)
 @method_decorator(csrf_exempt, name='dispatch')
 #@method_decorator(login_required, name='dispatch')

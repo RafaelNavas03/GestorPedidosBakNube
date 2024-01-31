@@ -51,7 +51,7 @@ class EnsambleUnidadMedida(models.Model):
     ideum = models.AutoField(primary_key=True)
     idump = models.ForeignKey('UnidadMedida', on_delete=models.CASCADE, db_column='idump', related_name='ensambles_idump')
     idumc = models.ForeignKey('UnidadMedida', on_delete=models.CASCADE, db_column='idumc', related_name='ensambles_idumc')
-    cantidadconversion = models.DecimalField(max_digits=9, decimal_places=2)
+    cantidadconversion = models.DecimalField(max_digits=12, decimal_places=6)
 
     class Meta:
         managed = False
