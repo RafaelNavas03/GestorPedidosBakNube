@@ -118,3 +118,57 @@ class CrearReservacion(View):
             return JsonResponse({'mensaje': 'Reservación creada con éxito'})
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
+        
+@method_decorator(csrf_exempt, name='dispatch')
+class ListarReservaciones(View):
+    def get(self, request, *args, **kwargs):
+        try:
+            # Obtener todas las reservaciones
+            reservaciones = Reservaciones.objects.all()
+
+            # Serializar los datos
+            reservaciones_data = []
+            for reservacion in reservaciones:
+                reservacion_data = {
+                    'id_reservacion': reservacion.id_reservacion,
+                    'id_cliente': reservacion.id_cliente.id_cliente,
+                    'id_mesa': reservacion.id_mesa.id_mesa,
+                    'fecha_reserva': reservacion.fecha_reserva.strftime('%Y-%m-%d'),
+                    'hora_reserva': reservacion.hora_reserva.strftime('%H:%M:%S'),
+                    'estado': reservacion.estado,
+                }
+                reservaciones_data.append(reservacion_data)
+
+            return JsonResponse({'reservaciones': reservaciones_data})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+        
+@method_decorator(csrf_exempt, name='dispatch')       
+class EditarReservacion(View):
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        try:
+            reservacion_id = kwargs.get('id_reservacion')
+            reservacion = Reservaciones.objects.get(id_reservacion=reservacion_id)
+
+            # Obtener los datos del cuerpo de la solicitud
+            fecha_reserva = request.POST.get('fecha_reserva')
+            hora_reserva = request.POST.get('hora_reserva')
+            estado = request.POST.get('estado')
+            id_mesa = request.POST.get('id_mesa')
+
+            # Actualizar los campos de la reservación
+            reservacion.fecha_reserva = fecha_reserva
+            reservacion.hora_reserva = hora_reserva
+            reservacion.estado = estado
+
+            # Validar si se proporcionó el nuevo id_mesa
+            if id_mesa:
+                # Actualizar el id_mesa solo si se proporciona un nuevo valor
+                reservacion.id_mesa = Mesas.objects.get(id_mesa=id_mesa)
+
+            reservacion.save()
+
+            return JsonResponse({'mensaje': 'Reservación editada con éxito'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
