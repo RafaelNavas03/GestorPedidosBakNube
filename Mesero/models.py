@@ -41,7 +41,7 @@ class Meseros(models.Model):
 class Pedidos(models.Model):
     id_pedido = models.AutoField(primary_key=True)
     id_cliente = models.ForeignKey(Clientes, models.DO_NOTHING, db_column='id_cliente')
-    precio = models.TextField()
+    precio = models.DecimalField(max_digits=9, decimal_places=2)
     tipo_de_pedido = models.CharField(max_length=1)
     metodo_de_pago = models.CharField(max_length=1)
     puntos = models.DecimalField(max_digits=3, decimal_places=0)

@@ -16,7 +16,7 @@ class TomarPedido(View):
             # Obtener datos del pedido desde el request
             mesero_instance = get_object_or_404(Meseros, id_mesero=id_mesero)
             id_mesa = request.POST.get('id_mesa')
-            id_cliente = request.POST.get('id_cliente')
+            id_cliente_id = request.POST.get('id_cliente')  # Obtener solo el ID del cliente
             fecha_pedido = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             tipo_de_pedido = request.POST.get('tipo_de_pedido')
             metodo_de_pago = request.POST.get('metodo_de_pago')
@@ -24,11 +24,13 @@ class TomarPedido(View):
             fecha_entrega = request.POST.get('fecha_entrega')  # Puedes ajustar este campo según tus necesidades
             estado_del_pedido = request.POST.get('estado_del_pedido')
             observacion_del_cliente = request.POST.get('observacion_del_cliente')
+            
+            cliente_instance = get_object_or_404(Clientes, id_cliente=id_cliente_id)
 
             # Crear el pedido
             nuevo_pedido = Pedidos.objects.create(
-                id_cliente=id_cliente,
-                precio=0,  # Puedes ajustar este campo según tus necesidades
+                id_cliente=cliente_instance,
+                precio=0,  # Inicializar a cero
                 tipo_de_pedido=tipo_de_pedido,
                 metodo_de_pago=metodo_de_pago,
                 puntos=puntos,
@@ -51,25 +53,40 @@ class TomarPedido(View):
             detalles_pedido = json.loads(detalles_pedido_raw)
 
             # Iterar sobre los detalles del pedido
+            total_precio_pedido = 0  # Inicializar el precio total del pedido
             for detalle_pedido_data in detalles_pedido['detalles_pedido']:
-                id_producto = detalle_pedido_data.get('id_producto')
+                id_producto_id = detalle_pedido_data.get('id_producto')  # Obtener solo el ID del producto
                 id_combo = detalle_pedido_data.get('id_combo')
-                id_promocion = detalle_pedido_data.get('id_promocion')
-                cantidad = detalle_pedido_data['cantidad']
-                precio_unitario = detalle_pedido_data['precio_unitario']
-                impuesto = detalle_pedido_data['impuesto']
-                descuento = detalle_pedido_data['descuento']
+                precio_unitario = float(detalle_pedido_data['precio_unitario'])
+                impuesto = float(detalle_pedido_data['impuesto'])
+                cantidad = float(detalle_pedido_data['cantidad'])
+                descuento = float(detalle_pedido_data['descuento']) if 'descuento' in detalle_pedido_data else 0
+                
+                id_producto_instance = get_object_or_404(Producto, id_producto=id_producto_id)
+                
+                # Calcular el precio total por cada detalle, teniendo en cuenta el impuesto
+                precio_total_detalle = (precio_unitario + impuesto)
+                
+                # Restar el descuento al precio total del detalle si hay descuento
+                precio_total_detalle -= descuento
+                
+                # Agregar el precio total del detalle al precio total del pedido
+                total_precio_pedido += precio_total_detalle
 
                 Detallepedidos.objects.create(
                     id_pedido=nuevo_pedido,
-                    id_producto=id_producto,
+                    id_producto=id_producto_instance,
                     id_combo=id_combo,
-                    id_promocion=id_promocion,
                     cantidad=cantidad,
                     precio_unitario=precio_unitario,
                     impuesto=impuesto,
                     descuento=descuento,
                 )
+
+            # Asignar el precio total del pedido al campo 'precio' en el modelo 'Pedidos'
+            nuevo_pedido.precio = total_precio_pedido
+            nuevo_pedido.save()
+
             return JsonResponse({'mensaje': 'Pedido creado con éxito'})
         except Exception as e:
             traceback.print_exc()
