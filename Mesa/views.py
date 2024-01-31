@@ -103,6 +103,8 @@ class CrearReservacion(View):
             if estado not in ['E', 'D', 'F']:
                 return JsonResponse({'error': 'Valor no válido para estado'}, status=400)
 
+            # Realiza validaciones adicionales según tus necesidades
+
             cliente = Clientes.objects.get(id_cliente=id_cliente)
             mesa = Mesas.objects.get(id_mesa=id_mesa)
 
@@ -116,8 +118,14 @@ class CrearReservacion(View):
             reservacion.save()
 
             return JsonResponse({'mensaje': 'Reservación creada con éxito'})
+        except Clientes.DoesNotExist:
+            return JsonResponse({'error': 'Cliente no encontrado'}, status=400)
+        except Mesas.DoesNotExist:
+            return JsonResponse({'error': 'Mesa no encontrada'}, status=400)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
+            # Loguea el error para tener un registro detallado
+            print(f'Error en la creación de reservación: {str(e)}')
+            return JsonResponse({'error': 'Error al procesar la solicitud'}, status=400)
         
 @method_decorator(csrf_exempt, name='dispatch')
 class ListarReservaciones(View):
